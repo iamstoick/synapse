@@ -9,7 +9,104 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      redis_connections: {
+        Row: {
+          connection_string: string
+          created_at: string | null
+          host: string | null
+          id: string
+          is_active: boolean | null
+          last_connected_at: string | null
+          name: string | null
+          password: string | null
+          port: number | null
+          user_id: string | null
+        }
+        Insert: {
+          connection_string: string
+          created_at?: string | null
+          host?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_connected_at?: string | null
+          name?: string | null
+          password?: string | null
+          port?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          connection_string?: string
+          created_at?: string | null
+          host?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_connected_at?: string | null
+          name?: string | null
+          password?: string | null
+          port?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      redis_metrics: {
+        Row: {
+          avg_response_time: number | null
+          cache_hits: number | null
+          cache_levels: Json | null
+          cache_misses: number | null
+          connection_id: string | null
+          cpu_utilization: number | null
+          hit_ratio: number | null
+          id: string
+          memory_peak_bytes: number | null
+          memory_total_bytes: number | null
+          memory_used_bytes: number | null
+          operations: Json | null
+          timestamp: string | null
+          total_commands_processed: number | null
+        }
+        Insert: {
+          avg_response_time?: number | null
+          cache_hits?: number | null
+          cache_levels?: Json | null
+          cache_misses?: number | null
+          connection_id?: string | null
+          cpu_utilization?: number | null
+          hit_ratio?: number | null
+          id?: string
+          memory_peak_bytes?: number | null
+          memory_total_bytes?: number | null
+          memory_used_bytes?: number | null
+          operations?: Json | null
+          timestamp?: string | null
+          total_commands_processed?: number | null
+        }
+        Update: {
+          avg_response_time?: number | null
+          cache_hits?: number | null
+          cache_levels?: Json | null
+          cache_misses?: number | null
+          connection_id?: string | null
+          cpu_utilization?: number | null
+          hit_ratio?: number | null
+          id?: string
+          memory_peak_bytes?: number | null
+          memory_total_bytes?: number | null
+          memory_used_bytes?: number | null
+          operations?: Json | null
+          timestamp?: string | null
+          total_commands_processed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redis_metrics_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "redis_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
