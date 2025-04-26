@@ -46,7 +46,8 @@ export const generateMockRedisMetrics = (): RedisPerformanceMetrics => {
       reads: Math.floor(getRandomNumber(5000, 20000)),
       writes: Math.floor(getRandomNumber(1000, 5000)),
       deletes: Math.floor(getRandomNumber(100, 1000))
-    }
+    },
+    cpuUtilization: getRandomNumber(10, 80) // Added CPU utilization metric
   };
 };
 
@@ -97,4 +98,16 @@ export const refreshData = (
     
     return newData;
   });
+};
+
+// For a real implementation, this would actually connect to Redis
+export const connectToRedis = async (connectionString: string): Promise<boolean> => {
+  // This is a stub function that would be replaced with actual Redis connection logic
+  console.log(`Connecting to Redis with: ${connectionString}`);
+  
+  // Simulate connection delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Return success (in a real implementation, this would return true/false based on connection success)
+  return true;
 };

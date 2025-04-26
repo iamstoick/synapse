@@ -24,6 +24,7 @@ export interface RedisPerformanceMetrics {
     writes: number;
     deletes: number;
   };
+  cpuUtilization?: number; // Added CPU utilization metric
 }
 
 export interface TimeSeriesData {
@@ -33,4 +34,13 @@ export interface TimeSeriesData {
   level3: number;
   level4: number;
   overall: number;
+}
+
+export interface RedisConnection {
+  connectionString: string; // Full Redis CLI connection string
+  host?: string;
+  port?: number;
+  password?: string;
+  isConnected: boolean;
+  lastConnected?: Date;
 }

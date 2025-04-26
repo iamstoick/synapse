@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { RedisPerformanceMetrics, TimeSeriesData } from "@/types/redis";
+import { RedisPerformanceMetrics, TimeSeriesData, RedisConnection } from "@/types/redis";
 import { generateMockRedisMetrics, generateTimeSeriesData, refreshData } from "@/utils/mockRedisData";
 import Header from "@/components/dashboard/Header";
 import HitRatioGauge from "@/components/dashboard/HitRatioGauge";
@@ -10,20 +10,39 @@ import OperationsChart from "@/components/dashboard/OperationsChart";
 import Navbar from "@/components/dashboard/Navbar";
 import CacheHitTrend from "@/components/dashboard/CacheHitTrend";
 import InfoPanel from "@/components/dashboard/InfoPanel";
+import RedisConnectionForm from "@/components/dashboard/RedisConnectionForm";
+import { toast } from "sonner";
 
 const Index = () => {
+  // State for Redis connection
+  const [connection, setConnection] = useState<RedisConnection | null>(null);
+  
   // State for Redis metrics and time series data
   const [metrics, setMetrics] = useState<RedisPerformanceMetrics>(generateMockRedisMetrics());
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>(generateTimeSeriesData());
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
+  // Function to handle connection to Redis
+  const handleConnect = (newConnection: RedisConnection) => {
+    setConnection(newConnection);
+    // In a real implementation, we would start streaming data from Redis
+    // For now, we'll just use our mock data generator
+  };
+  
+  // Function to handle disconnection from Redis
+  const handleDisconnect = () => {
+    setConnection(null);
+    toast.info("Disconnected from Redis server");
+  };
+  
   // Function to manually refresh data
   const handleRefresh = () => {
+    // If connected to a real Redis server, we would fetch fresh data here
     refreshData(setMetrics, setTimeSeriesData);
     setLastUpdated(new Date());
   };
   
-  // Refresh data every 10 seconds
+  // Refresh data every 10 seconds if connected
   useEffect(() => {
     // Initial data load
     handleRefresh();
@@ -39,6 +58,14 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar onRefresh={handleRefresh} lastUpdated={lastUpdated} />
       <div className="max-w-7xl mx-auto px-4 md:px-6">
+        {/* Redis Connection Form */}
+        <RedisConnectionForm
+          onConnect={handleConnect}
+          onDisconnect={handleDisconnect}
+          isConnected={!!connection?.isConnected}
+          connectionString={connection?.connectionString}
+        />
+        
         {/* Header with key metrics */}
         <Header metrics={metrics} />
         
@@ -83,7 +110,7 @@ const Index = () => {
         
         {/* Footer with info */}
         <div className="text-center text-sm text-gray-500 py-4">
-          <p>Redis Cache Oracle • Refreshes every 10 seconds • Using simulated data</p>
+          <p>{connection?.isConnected ? 'Connected to Redis' : 'Using simulated data'} • Refreshes every 10 seconds</p>
         </div>
       </div>
     </div>
