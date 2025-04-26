@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RedisConnection } from "@/types/redis";
 import { toast } from "sonner";
 import { Database, Play, RefreshCw, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RedisConnectionFormProps {
   onConnect: (connection: RedisConnection) => void;
@@ -28,7 +29,6 @@ const RedisConnectionForm = ({
       return;
     }
 
-    // Parse connection string (basic validation only)
     if (!input.startsWith("redis-cli")) {
       toast.error("Connection string must start with 'redis-cli'");
       return;
@@ -37,21 +37,39 @@ const RedisConnectionForm = ({
     setIsSubmitting(true);
 
     try {
-      // In a real implementation, we would actually attempt to connect to Redis here
-      // For now we'll just simulate a connection
-      setTimeout(() => {
-        const connection: RedisConnection = {
-          connectionString: input,
-          isConnected: true,
-          lastConnected: new Date()
-        };
-        
-        onConnect(connection);
-        toast.success("Connected to Redis server");
-        setIsSubmitting(false);
-      }, 1000);
+      // Test the connection using our edge function
+      const { data, error } = await supabase.functions.invoke('redis-monitor', {
+        body: { connectionString: input }
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to connect to Redis server');
+      }
+
+      // Save the connection to the database
+      const { error: dbError } = await supabase
+        .from('redis_connections')
+        .insert({
+          connection_string: input,
+          is_active: true
+        });
+
+      if (dbError) throw dbError;
+
+      const connection: RedisConnection = {
+        connectionString: input,
+        isConnected: true,
+        lastConnected: new Date()
+      };
+      
+      onConnect(connection);
+      toast.success("Connected to Redis server");
     } catch (error) {
-      toast.error("Failed to connect to Redis server");
+      console.error('Redis connection error:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to connect to Redis server");
+    } finally {
       setIsSubmitting(false);
     }
   };
