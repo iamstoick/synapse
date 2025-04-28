@@ -16,6 +16,10 @@ serve(async (req) => {
   try {
     const { connectionString } = await req.json()
 
+    if (!connectionString) {
+      throw new Error("Connection string is required")
+    }
+
     // Parse Redis connection string
     // Example format: "redis-cli -h localhost -p 6379 -a password"
     const parts = connectionString.split(' ')
@@ -23,12 +27,19 @@ serve(async (req) => {
     const port = parseInt(parts[parts.indexOf('-p') + 1]) || 6379
     const password = parts[parts.indexOf('-a') + 1] || undefined
 
-    // Connect to Redis
-    const redis = await connect({
-      hostname: host,
-      port: port,
-      password: password,
-    })
+    console.log(`Attempting to connect to Redis at ${host}:${port}`)
+
+    // Connect to Redis with timeout
+    const redis = await Promise.race([
+      connect({
+        hostname: host,
+        port: port,
+        password: password,
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Connection timeout')), 5000)
+      )
+    ]);
 
     // Get Redis INFO
     const info = await redis.info()

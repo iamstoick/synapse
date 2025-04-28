@@ -37,16 +37,22 @@ const RedisConnectionForm = ({
     setIsSubmitting(true);
 
     try {
+      console.log("Testing Redis connection...");
+      
       // Test the connection using our edge function
       const { data, error } = await supabase.functions.invoke('redis-monitor', {
         body: { connectionString: input }
       });
+
+      console.log("Edge function response:", { data, error });
 
       if (error) throw error;
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to connect to Redis server');
       }
+
+      console.log("Connection successful, saving to database...");
 
       // Save the connection to the database
       const { data: connectionData, error: dbError } = await supabase
@@ -58,10 +64,17 @@ const RedisConnectionForm = ({
         .select('id')
         .single();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error('Failed to save connection details');
+      }
+
+      if (!connectionData?.id) {
+        throw new Error('Failed to get connection ID');
+      }
 
       const connection: RedisConnection = {
-        id: connectionData?.id, // Use the ID from the database
+        id: connectionData.id,
         connectionString: input,
         isConnected: true,
         lastConnected: new Date()
