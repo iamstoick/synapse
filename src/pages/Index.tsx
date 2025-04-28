@@ -32,11 +32,13 @@ const Index = () => {
       if (error) throw error;
       if (!data.success) throw new Error(data.error || 'Failed to fetch metrics');
 
-      // Save metrics to the database
-      await supabase.from('redis_metrics').insert({
-        connection_id: connection.id,
-        ...data.metrics
-      });
+      // Save metrics to the database if we have a connection ID
+      if (connection.id) {
+        await supabase.from('redis_metrics').insert({
+          connection_id: connection.id,
+          ...data.metrics
+        });
+      }
 
       return data.metrics;
     },

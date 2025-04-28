@@ -49,16 +49,19 @@ const RedisConnectionForm = ({
       }
 
       // Save the connection to the database
-      const { error: dbError } = await supabase
+      const { data: connectionData, error: dbError } = await supabase
         .from('redis_connections')
         .insert({
           connection_string: input,
           is_active: true
-        });
+        })
+        .select('id')
+        .single();
 
       if (dbError) throw dbError;
 
       const connection: RedisConnection = {
+        id: connectionData?.id, // Use the ID from the database
         connectionString: input,
         isConnected: true,
         lastConnected: new Date()

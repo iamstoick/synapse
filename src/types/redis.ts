@@ -37,6 +37,7 @@ export interface TimeSeriesData {
 }
 
 export interface RedisConnection {
+  id?: string; // Added ID field
   connectionString: string; // Full Redis CLI connection string
   host?: string;
   port?: number;
