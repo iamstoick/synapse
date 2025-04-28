@@ -25,22 +25,33 @@ const Index = () => {
     queryFn: async () => {
       if (!connection?.connectionString) return null;
 
-      const { data, error } = await supabase.functions.invoke('redis-monitor', {
-        body: { connectionString: connection.connectionString }
-      });
-
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to fetch metrics');
-
-      // Save metrics to the database if we have a connection ID
-      if (connection.id) {
-        await supabase.from('redis_metrics').insert({
-          connection_id: connection.id,
-          ...data.metrics
+      try {
+        const { data, error } = await supabase.functions.invoke('redis-monitor', {
+          body: { connectionString: connection.connectionString }
         });
-      }
 
-      return data.metrics;
+        if (error) throw error;
+        if (!data.success) throw new Error(data.error || 'Failed to fetch metrics');
+
+        // Save metrics to the database if we have a connection ID
+        if (connection.id) {
+          try {
+            await supabase.from('redis_metrics').insert({
+              connection_id: connection.id,
+              ...data.metrics
+            });
+          } catch (dbError) {
+            console.error('Error saving metrics to database:', dbError);
+            // Don't throw here as we still want to show metrics even if saving fails
+          }
+        }
+
+        return data.metrics;
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+        toast.error('Failed to fetch Redis metrics');
+        return null;
+      }
     },
     enabled: !!connection?.connectionString,
     refetchInterval: 10000 // Refresh every 10 seconds when component is visible
@@ -48,15 +59,18 @@ const Index = () => {
   
   const handleConnect = async (newConnection: RedisConnection) => {
     setConnection(newConnection);
+    toast.success('Successfully connected to Redis server');
   };
   
   const handleDisconnect = () => {
     setConnection(null);
+    toast.info('Disconnected from Redis server');
   };
   
   const handleRefresh = () => {
     refetch();
     setLastUpdated(new Date());
+    toast.info('Refreshing metrics...');
   };
   
   // Initial data load and refresh setup
@@ -84,7 +98,7 @@ const Index = () => {
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-4">Cache Hit Ratio by Level</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-card p-6 rounded-lg shadow-sm">
-                {metrics.cacheLevels.map((level) => (
+                {metrics.cacheLevels && metrics.cacheLevels.map((level) => (
                   <div key={level.level} className="text-center">
                     <HitRatioGauge cacheLevel={level} />
                   </div>

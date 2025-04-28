@@ -22,6 +22,21 @@ const Header = ({ metrics }: HeaderProps) => {
   const formatCpuUtilization = (cpu?: number) => {
     return cpu ? `${cpu.toFixed(1)}%` : 'N/A';
   };
+
+  // Format memory values with fallback
+  const formatMemory = () => {
+    if (!metrics.memoryUsage) {
+      return 'N/A';
+    }
+    const used = metrics.memoryUsage.used || 0;
+    const total = metrics.memoryUsage.total || 0;
+    return `${used} / ${total} MB`;
+  };
+  
+  // Safely get total requests with fallback
+  const getTotalRequests = () => {
+    return metrics.totalRequests != null ? metrics.totalRequests.toLocaleString() : '0';
+  };
   
   return (
     <div className="mb-6">
@@ -35,25 +50,25 @@ const Header = ({ metrics }: HeaderProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-4">
         <MetricCard 
           title="Overall Hit Ratio"
-          value={formatHitRatio(metrics.overallHitRatio)}
+          value={formatHitRatio(metrics.overallHitRatio || 0)}
           icon={<CircleGauge className="h-5 w-5" />}
         />
         
         <MetricCard 
           title="Total Requests"
-          value={metrics.totalRequests.toLocaleString()}
+          value={getTotalRequests()}
           icon={<Database className="h-5 w-5" />}
         />
         
         <MetricCard 
           title="Avg Response Time"
-          value={formatResponseTime(metrics.avgResponseTime)}
+          value={formatResponseTime(metrics.avgResponseTime || 0)}
           icon={<Clock3 className="h-5 w-5" />}
         />
         
         <MetricCard 
           title="Memory Used"
-          value={`${metrics.memoryUsage.used} / ${metrics.memoryUsage.total} MB`}
+          value={formatMemory()}
           icon={<Server className="h-5 w-5" />}
         />
 
