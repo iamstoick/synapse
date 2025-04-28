@@ -1,4 +1,3 @@
-
 export interface CacheLevel {
   level: number;
   hitRatio: number;
@@ -24,7 +23,15 @@ export interface RedisPerformanceMetrics {
     writes: number;
     deletes: number;
   };
-  cpuUtilization?: number; // Added CPU utilization metric
+  cpuUtilization?: number;
+  dbSize?: number;
+  keyspaceHits?: number;
+  keyspaceMisses?: number;
+  usedCpuSys?: number;
+  usedMemoryHuman?: string;
+  usedMemoryPeakHuman?: string;
+  memFragmentationRatio?: number;
+  uptimeInDays?: number;
 }
 
 export interface TimeSeriesData {
