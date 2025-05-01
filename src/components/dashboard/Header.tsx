@@ -1,7 +1,7 @@
 
 import { RedisPerformanceMetrics } from "@/types/redis";
 import MetricCard from "./MetricCard";
-import { CircleGauge, Database, Clock3, Server, Gauge, Cpu, Memory, Scale, Calendar } from "lucide-react";
+import { CircleGauge, Database, Clock3, Server, Gauge, Cpu, HardDrive, Scale, Calendar } from "lucide-react";
 
 interface HeaderProps {
   metrics: RedisPerformanceMetrics;
@@ -69,13 +69,13 @@ const Header = ({ metrics }: HeaderProps) => {
         <MetricCard 
           title="Memory Used"
           value={formatMemory(metrics.usedMemoryHuman)}
-          icon={<Memory className="h-5 w-5" />}
+          icon={<HardDrive className="h-5 w-5" />}
         />
 
         <MetricCard 
           title="Peak Memory"
           value={formatMemory(metrics.usedMemoryPeakHuman)}
-          icon={<Memory className="h-5 w-5" />}
+          icon={<HardDrive className="h-5 w-5" />}
         />
 
         <MetricCard 
