@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { RedisPerformanceMetrics, TimeSeriesData, RedisConnection } from "@/types/redis";
 import Header from "@/components/dashboard/Header";
 import HitRatioGauge from "@/components/dashboard/HitRatioGauge";
@@ -21,7 +21,7 @@ const Index = () => {
   const [connection, setConnection] = useState<RedisConnection | null>(null);
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
+  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(false);
 
   // Real-time metrics hook
   const { latestMetrics, metricsHistory, isConnected: isRealtimeConnected } = useRealtimeMetrics({
@@ -29,22 +29,19 @@ const Index = () => {
     enabled: isRealtimeEnabled && !!connection?.id
   });
 
-  // Fetch metrics using React Query - only when real-time is disabled
-  const { data: polledMetrics = null, refetch } = useQuery({
+  // Fetch metrics using React Query
+  const { data: metrics = null, refetch } = useQuery({
     queryKey: ['redis-metrics', connection?.connectionString],
     queryFn: async () => {
       if (!connection?.connectionString) return null;
 
       try {
-        console.log('Fetching metrics via polling...');
         const { data, error } = await supabase.functions.invoke('redis-monitor', {
           body: { connectionString: connection.connectionString }
         });
 
         if (error) throw error;
         if (!data.success) throw new Error(data.error || 'Failed to fetch metrics');
-
-        console.log('Polled metrics received:', data.metrics);
 
         // Save metrics to the database if we have a connection ID
         if (connection.id) {
@@ -64,6 +61,7 @@ const Index = () => {
             });
           } catch (dbError) {
             console.error('Error saving metrics to database:', dbError);
+            // Don't throw here as we still want to show metrics even if saving fails
           }
         }
 
@@ -75,119 +73,53 @@ const Index = () => {
       }
     },
     enabled: !!connection?.connectionString && !isRealtimeEnabled,
-    refetchInterval: !isRealtimeEnabled ? 10000 : false
+    refetchInterval: isRealtimeEnabled ? false : 10000 // Only poll when realtime is disabled
   });
 
-  // Determine current metrics to display
-  const currentMetrics = useMemo(() => {
-    console.log('Determining current metrics - realtime enabled:', isRealtimeEnabled);
-    console.log('Latest real-time metrics:', latestMetrics);
-    console.log('Polled metrics:', polledMetrics);
-    
-    if (isRealtimeEnabled) {
-      return latestMetrics;
-    } else {
-      return polledMetrics;
-    }
-  }, [isRealtimeEnabled, latestMetrics, polledMetrics]);
+  // Use real-time metrics if available, otherwise use polled metrics
+  const currentMetrics = latestMetrics || metrics;
   
   const handleConnect = async (newConnection: RedisConnection) => {
-    console.log('Connecting to Redis with connection:', newConnection);
     setConnection(newConnection);
-    setIsRealtimeEnabled(true);
-    
-    // Immediately fetch metrics when connecting
-    if (newConnection.connectionString) {
-      try {
-        const { data, error } = await supabase.functions.invoke('redis-monitor', {
-          body: { connectionString: newConnection.connectionString }
-        });
-
-        if (!error && data?.success && newConnection.id) {
-          await supabase.from('redis_metrics').insert({
-            connection_id: newConnection.id,
-            cache_hits: data.metrics.keyspaceHits,
-            cache_misses: data.metrics.keyspaceMisses,
-            cpu_utilization: data.metrics.usedCpuSys,
-            memory_used_bytes: data.metrics.memoryUsage.used * 1024 * 1024,
-            memory_peak_bytes: data.metrics.memoryUsage.peak * 1024 * 1024,
-            memory_total_bytes: data.metrics.memoryUsage.total * 1024 * 1024,
-            total_commands_processed: data.metrics.totalRequests,
-            avg_response_time: data.metrics.avgResponseTime,
-            operations: data.metrics.operations,
-            cache_levels: data.metrics.cacheLevels
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching initial metrics:', error);
-      }
-    }
-    
     toast.success('Successfully connected to Redis server');
   };
   
   const handleDisconnect = () => {
     setConnection(null);
     setIsRealtimeEnabled(false);
-    setTimeSeriesData([]);
     toast.info('Disconnected from Redis server');
   };
   
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = () => {
     if (!isRealtimeEnabled) {
       refetch();
-    } else {
-      // For real-time mode, trigger a manual metrics fetch to get immediate data
-      if (connection?.connectionString) {
-        supabase.functions.invoke('redis-monitor', {
-          body: { connectionString: connection.connectionString }
-        }).then(({ data, error }) => {
-          if (!error && data?.success && connection.id) {
-            supabase.from('redis_metrics').insert({
-              connection_id: connection.id,
-              cache_hits: data.metrics.keyspaceHits,
-              cache_misses: data.metrics.keyspaceMisses,
-              cpu_utilization: data.metrics.usedCpuSys,
-              memory_used_bytes: data.metrics.memoryUsage.used * 1024 * 1024,
-              memory_peak_bytes: data.metrics.memoryUsage.peak * 1024 * 1024,
-              memory_total_bytes: data.metrics.memoryUsage.total * 1024 * 1024,
-              total_commands_processed: data.metrics.totalRequests,
-              avg_response_time: data.metrics.avgResponseTime,
-              operations: data.metrics.operations,
-              cache_levels: data.metrics.cacheLevels
-            });
-          }
-        });
-      }
     }
     setLastUpdated(new Date());
     toast.info('Refreshing metrics...');
-  }, [isRealtimeEnabled, connection, refetch]);
+  };
 
-  const toggleRealtime = useCallback(() => {
-    const newRealtimeState = !isRealtimeEnabled;
-    setIsRealtimeEnabled(newRealtimeState);
-    
-    if (newRealtimeState) {
+  const toggleRealtime = () => {
+    setIsRealtimeEnabled(!isRealtimeEnabled);
+    if (!isRealtimeEnabled) {
       toast.success('Real-time streaming enabled');
     } else {
-      toast.info('Real-time streaming disabled - switching to polling mode');
-      // Immediately fetch data when switching to polling mode
-      setTimeout(() => refetch(), 100);
+      toast.info('Real-time streaming disabled');
     }
-  }, [isRealtimeEnabled, refetch]);
+  };
   
-  // Update last updated time when metrics change
+  // Initial data load and refresh setup
   useEffect(() => {
-    if (currentMetrics) {
-      setLastUpdated(new Date());
-      console.log('Current metrics updated:', currentMetrics);
+    if (connection?.connectionString && !isRealtimeEnabled) {
+      handleRefresh();
     }
-  }, [currentMetrics]);
-  
-  console.log('Rendering with current metrics:', currentMetrics);
-  console.log('Real-time enabled:', isRealtimeEnabled);
-  console.log('Real-time connected:', isRealtimeConnected);
+  }, [connection]);
+
+  // Update last updated time when real-time metrics change
+  useEffect(() => {
+    if (latestMetrics) {
+      setLastUpdated(new Date());
+    }
+  }, [latestMetrics]);
   
   return (
     <div className="min-h-screen bg-background">
@@ -203,7 +135,7 @@ const Index = () => {
         {connection && (
           <div className="mb-6 flex items-center justify-between bg-card p-4 rounded-lg shadow-sm">
             <RealtimeIndicator 
-              isConnected={isRealtimeEnabled && isRealtimeConnected} 
+              isConnected={isRealtimeConnected} 
               lastUpdate={lastUpdated}
             />
             <button
@@ -223,7 +155,7 @@ const Index = () => {
           <>
             <Header metrics={currentMetrics} />
             
-            {isRealtimeEnabled && metricsHistory.length > 0 && (
+            {isRealtimeEnabled && (
               <div className="mb-6">
                 <MetricsStream metricsHistory={metricsHistory} />
               </div>
