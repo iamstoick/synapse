@@ -21,16 +21,16 @@ const Index = () => {
   const [connection, setConnection] = useState<RedisConnection | null>(null);
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(false);
+  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true); // Start with real-time enabled
 
-  // Real-time metrics hook
+  // Real-time metrics hook - always enabled when we have a connection
   const { latestMetrics, metricsHistory, isConnected: isRealtimeConnected } = useRealtimeMetrics({
     connectionId: connection?.id,
-    enabled: isRealtimeEnabled && !!connection?.id
+    enabled: !!connection?.id // Enable real-time whenever we have a connection
   });
 
-  // Fetch metrics using React Query
-  const { data: metrics = null, refetch } = useQuery({
+  // Fetch metrics using React Query - only when real-time is disabled
+  const { data: polledMetrics = null, refetch } = useQuery({
     queryKey: ['redis-metrics', connection?.connectionString],
     queryFn: async () => {
       if (!connection?.connectionString) return null;
@@ -61,7 +61,6 @@ const Index = () => {
             });
           } catch (dbError) {
             console.error('Error saving metrics to database:', dbError);
-            // Don't throw here as we still want to show metrics even if saving fails
           }
         }
 
@@ -73,14 +72,15 @@ const Index = () => {
       }
     },
     enabled: !!connection?.connectionString && !isRealtimeEnabled,
-    refetchInterval: isRealtimeEnabled ? false : 10000 // Only poll when realtime is disabled
+    refetchInterval: !isRealtimeEnabled ? 10000 : false
   });
 
-  // Use real-time metrics if available, otherwise use polled metrics
-  const currentMetrics = latestMetrics || metrics;
+  // Use real-time metrics when available and enabled, otherwise use polled metrics
+  const currentMetrics = (isRealtimeEnabled && latestMetrics) ? latestMetrics : polledMetrics;
   
   const handleConnect = async (newConnection: RedisConnection) => {
     setConnection(newConnection);
+    setIsRealtimeEnabled(true); // Enable real-time by default on new connections
     toast.success('Successfully connected to Redis server');
   };
   
@@ -93,33 +93,61 @@ const Index = () => {
   const handleRefresh = () => {
     if (!isRealtimeEnabled) {
       refetch();
+    } else {
+      // For real-time mode, trigger a manual metrics fetch to get immediate data
+      if (connection?.connectionString) {
+        supabase.functions.invoke('redis-monitor', {
+          body: { connectionString: connection.connectionString }
+        }).then(({ data, error }) => {
+          if (!error && data?.success && connection.id) {
+            supabase.from('redis_metrics').insert({
+              connection_id: connection.id,
+              cache_hits: data.metrics.keyspaceHits,
+              cache_misses: data.metrics.keyspaceMisses,
+              cpu_utilization: data.metrics.usedCpuSys,
+              memory_used_bytes: data.metrics.memoryUsage.used * 1024 * 1024,
+              memory_peak_bytes: data.metrics.memoryUsage.peak * 1024 * 1024,
+              memory_total_bytes: data.metrics.memoryUsage.total * 1024 * 1024,
+              total_commands_processed: data.metrics.totalRequests,
+              avg_response_time: data.metrics.avgResponseTime,
+              operations: data.metrics.operations,
+              cache_levels: data.metrics.cacheLevels
+            });
+          }
+        });
+      }
     }
     setLastUpdated(new Date());
     toast.info('Refreshing metrics...');
   };
 
   const toggleRealtime = () => {
-    setIsRealtimeEnabled(!isRealtimeEnabled);
-    if (!isRealtimeEnabled) {
+    const newRealtimeState = !isRealtimeEnabled;
+    setIsRealtimeEnabled(newRealtimeState);
+    
+    if (newRealtimeState) {
       toast.success('Real-time streaming enabled');
     } else {
-      toast.info('Real-time streaming disabled');
+      toast.info('Real-time streaming disabled - switching to polling mode');
+      // Immediately fetch data when switching to polling mode
+      refetch();
     }
   };
   
-  // Initial data load and refresh setup
+  // Update last updated time when real-time metrics change
+  useEffect(() => {
+    if (latestMetrics && isRealtimeEnabled) {
+      setLastUpdated(new Date());
+      console.log('Real-time metrics updated:', latestMetrics);
+    }
+  }, [latestMetrics, isRealtimeEnabled]);
+
+  // Initial data load for polling mode
   useEffect(() => {
     if (connection?.connectionString && !isRealtimeEnabled) {
       handleRefresh();
     }
-  }, [connection]);
-
-  // Update last updated time when real-time metrics change
-  useEffect(() => {
-    if (latestMetrics) {
-      setLastUpdated(new Date());
-    }
-  }, [latestMetrics]);
+  }, [connection, isRealtimeEnabled]);
   
   return (
     <div className="min-h-screen bg-background">
@@ -135,7 +163,7 @@ const Index = () => {
         {connection && (
           <div className="mb-6 flex items-center justify-between bg-card p-4 rounded-lg shadow-sm">
             <RealtimeIndicator 
-              isConnected={isRealtimeConnected} 
+              isConnected={isRealtimeEnabled && isRealtimeConnected} 
               lastUpdate={lastUpdated}
             />
             <button
@@ -155,7 +183,7 @@ const Index = () => {
           <>
             <Header metrics={currentMetrics} />
             
-            {isRealtimeEnabled && (
+            {isRealtimeEnabled && metricsHistory.length > 0 && (
               <div className="mb-6">
                 <MetricsStream metricsHistory={metricsHistory} />
               </div>
