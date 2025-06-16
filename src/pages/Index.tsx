@@ -10,14 +10,24 @@ import Navbar from "@/components/dashboard/Navbar";
 import CacheHitTrend from "@/components/dashboard/CacheHitTrend";
 import InfoPanel from "@/components/dashboard/InfoPanel";
 import RedisConnectionForm from "@/components/dashboard/RedisConnectionForm";
+import RealtimeIndicator from "@/components/dashboard/RealtimeIndicator";
+import MetricsStream from "@/components/dashboard/MetricsStream";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useRealtimeMetrics } from "@/hooks/useRealtimeMetrics";
 
 const Index = () => {
   const [connection, setConnection] = useState<RedisConnection | null>(null);
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(false);
+
+  // Real-time metrics hook
+  const { latestMetrics, metricsHistory, isConnected: isRealtimeConnected } = useRealtimeMetrics({
+    connectionId: connection?.id,
+    enabled: isRealtimeEnabled && !!connection?.id
+  });
 
   // Fetch metrics using React Query
   const { data: metrics = null, refetch } = useQuery({
@@ -38,7 +48,16 @@ const Index = () => {
           try {
             await supabase.from('redis_metrics').insert({
               connection_id: connection.id,
-              ...data.metrics
+              cache_hits: data.metrics.keyspaceHits,
+              cache_misses: data.metrics.keyspaceMisses,
+              cpu_utilization: data.metrics.usedCpuSys,
+              memory_used_bytes: data.metrics.memoryUsage.used * 1024 * 1024,
+              memory_peak_bytes: data.metrics.memoryUsage.peak * 1024 * 1024,
+              memory_total_bytes: data.metrics.memoryUsage.total * 1024 * 1024,
+              total_commands_processed: data.metrics.totalRequests,
+              avg_response_time: data.metrics.avgResponseTime,
+              operations: data.metrics.operations,
+              cache_levels: data.metrics.cacheLevels
             });
           } catch (dbError) {
             console.error('Error saving metrics to database:', dbError);
@@ -53,9 +72,12 @@ const Index = () => {
         return null;
       }
     },
-    enabled: !!connection?.connectionString,
-    refetchInterval: 10000 // Refresh every 10 seconds when component is visible
+    enabled: !!connection?.connectionString && !isRealtimeEnabled,
+    refetchInterval: isRealtimeEnabled ? false : 10000 // Only poll when realtime is disabled
   });
+
+  // Use real-time metrics if available, otherwise use polled metrics
+  const currentMetrics = latestMetrics || metrics;
   
   const handleConnect = async (newConnection: RedisConnection) => {
     setConnection(newConnection);
@@ -64,21 +86,40 @@ const Index = () => {
   
   const handleDisconnect = () => {
     setConnection(null);
+    setIsRealtimeEnabled(false);
     toast.info('Disconnected from Redis server');
   };
   
   const handleRefresh = () => {
-    refetch();
+    if (!isRealtimeEnabled) {
+      refetch();
+    }
     setLastUpdated(new Date());
     toast.info('Refreshing metrics...');
+  };
+
+  const toggleRealtime = () => {
+    setIsRealtimeEnabled(!isRealtimeEnabled);
+    if (!isRealtimeEnabled) {
+      toast.success('Real-time streaming enabled');
+    } else {
+      toast.info('Real-time streaming disabled');
+    }
   };
   
   // Initial data load and refresh setup
   useEffect(() => {
-    if (connection?.connectionString) {
+    if (connection?.connectionString && !isRealtimeEnabled) {
       handleRefresh();
     }
   }, [connection]);
+
+  // Update last updated time when real-time metrics change
+  useEffect(() => {
+    if (latestMetrics) {
+      setLastUpdated(new Date());
+    }
+  }, [latestMetrics]);
   
   return (
     <div className="min-h-screen bg-background">
@@ -90,15 +131,40 @@ const Index = () => {
           isConnected={!!connection?.isConnected}
           connectionString={connection?.connectionString}
         />
+
+        {connection && (
+          <div className="mb-6 flex items-center justify-between bg-card p-4 rounded-lg shadow-sm">
+            <RealtimeIndicator 
+              isConnected={isRealtimeConnected} 
+              lastUpdate={lastUpdated}
+            />
+            <button
+              onClick={toggleRealtime}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                isRealtimeEnabled
+                  ? 'bg-red-500 hover:bg-red-600 text-white'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
+              }`}
+            >
+              {isRealtimeEnabled ? 'Disable Real-time' : 'Enable Real-time'}
+            </button>
+          </div>
+        )}
         
-        {metrics && (
+        {currentMetrics && (
           <>
-            <Header metrics={metrics} />
+            <Header metrics={currentMetrics} />
+            
+            {isRealtimeEnabled && (
+              <div className="mb-6">
+                <MetricsStream metricsHistory={metricsHistory} />
+              </div>
+            )}
             
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-4">Cache Hit Ratio by Level</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-card p-6 rounded-lg shadow-sm">
-                {metrics.cacheLevels && metrics.cacheLevels.map((level) => (
+                {currentMetrics.cacheLevels && currentMetrics.cacheLevels.map((level) => (
                   <div key={level.level} className="text-center">
                     <HitRatioGauge cacheLevel={level} />
                   </div>
@@ -121,18 +187,23 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <MemoryUsage metrics={metrics} />
-              <OperationsChart metrics={metrics} />
+              <MemoryUsage metrics={currentMetrics} />
+              <OperationsChart metrics={currentMetrics} />
             </div>
             
             <div className="mb-6">
-              <InfoPanel metrics={metrics} />
+              <InfoPanel metrics={currentMetrics} />
             </div>
           </>
         )}
         
         <div className="text-center text-sm text-gray-500 py-4">
-          <p>{connection?.isConnected ? 'Connected to Redis' : 'Connect to a Redis server to see metrics'}</p>
+          <p>
+            {connection?.isConnected 
+              ? `Connected to Redis ${isRealtimeEnabled ? '(Real-time streaming active)' : '(Polling mode)'}` 
+              : 'Connect to a Redis server to see metrics'
+            }
+          </p>
         </div>
       </div>
     </div>
