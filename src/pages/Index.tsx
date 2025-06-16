@@ -23,7 +23,7 @@ const Index = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(true);
 
-  // Real-time metrics hook - enabled when we have a connection
+  // Real-time metrics hook
   const { latestMetrics, metricsHistory, isConnected: isRealtimeConnected } = useRealtimeMetrics({
     connectionId: connection?.id,
     enabled: isRealtimeEnabled && !!connection?.id
@@ -78,22 +78,51 @@ const Index = () => {
     refetchInterval: !isRealtimeEnabled ? 10000 : false
   });
 
-  // Memoize current metrics to ensure proper updates
+  // Determine current metrics to display
   const currentMetrics = useMemo(() => {
-    if (isRealtimeEnabled && latestMetrics) {
-      console.log('Using real-time metrics:', latestMetrics);
+    console.log('Determining current metrics - realtime enabled:', isRealtimeEnabled);
+    console.log('Latest real-time metrics:', latestMetrics);
+    console.log('Polled metrics:', polledMetrics);
+    
+    if (isRealtimeEnabled) {
       return latestMetrics;
-    }
-    if (!isRealtimeEnabled && polledMetrics) {
-      console.log('Using polled metrics:', polledMetrics);
+    } else {
       return polledMetrics;
     }
-    return null;
   }, [isRealtimeEnabled, latestMetrics, polledMetrics]);
   
   const handleConnect = async (newConnection: RedisConnection) => {
+    console.log('Connecting to Redis with connection:', newConnection);
     setConnection(newConnection);
     setIsRealtimeEnabled(true);
+    
+    // Immediately fetch metrics when connecting
+    if (newConnection.connectionString) {
+      try {
+        const { data, error } = await supabase.functions.invoke('redis-monitor', {
+          body: { connectionString: newConnection.connectionString }
+        });
+
+        if (!error && data?.success && newConnection.id) {
+          await supabase.from('redis_metrics').insert({
+            connection_id: newConnection.id,
+            cache_hits: data.metrics.keyspaceHits,
+            cache_misses: data.metrics.keyspaceMisses,
+            cpu_utilization: data.metrics.usedCpuSys,
+            memory_used_bytes: data.metrics.memoryUsage.used * 1024 * 1024,
+            memory_peak_bytes: data.metrics.memoryUsage.peak * 1024 * 1024,
+            memory_total_bytes: data.metrics.memoryUsage.total * 1024 * 1024,
+            total_commands_processed: data.metrics.totalRequests,
+            avg_response_time: data.metrics.avgResponseTime,
+            operations: data.metrics.operations,
+            cache_levels: data.metrics.cacheLevels
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching initial metrics:', error);
+      }
+    }
+    
     toast.success('Successfully connected to Redis server');
   };
   
@@ -148,13 +177,17 @@ const Index = () => {
     }
   }, [isRealtimeEnabled, refetch]);
   
-  // Update last updated time when real-time metrics change
+  // Update last updated time when metrics change
   useEffect(() => {
-    if (latestMetrics && isRealtimeEnabled) {
+    if (currentMetrics) {
       setLastUpdated(new Date());
-      console.log('Real-time metrics updated, timestamp:', latestMetrics.timestamp);
+      console.log('Current metrics updated:', currentMetrics);
     }
-  }, [latestMetrics, isRealtimeEnabled]);
+  }, [currentMetrics]);
+  
+  console.log('Rendering with current metrics:', currentMetrics);
+  console.log('Real-time enabled:', isRealtimeEnabled);
+  console.log('Real-time connected:', isRealtimeConnected);
   
   return (
     <div className="min-h-screen bg-background">
@@ -188,7 +221,7 @@ const Index = () => {
         
         {currentMetrics && (
           <>
-            <Header key={currentMetrics.timestamp} metrics={currentMetrics} />
+            <Header metrics={currentMetrics} />
             
             {isRealtimeEnabled && metricsHistory.length > 0 && (
               <div className="mb-6">
@@ -222,12 +255,12 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <MemoryUsage key={`memory-${currentMetrics.timestamp}`} metrics={currentMetrics} />
-              <OperationsChart key={`ops-${currentMetrics.timestamp}`} metrics={currentMetrics} />
+              <MemoryUsage metrics={currentMetrics} />
+              <OperationsChart metrics={currentMetrics} />
             </div>
             
             <div className="mb-6">
-              <InfoPanel key={`info-${currentMetrics.timestamp}`} metrics={currentMetrics} />
+              <InfoPanel metrics={currentMetrics} />
             </div>
           </>
         )}

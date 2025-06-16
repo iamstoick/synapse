@@ -63,10 +63,9 @@ export const useRealtimeMetrics = ({ connectionId, enabled }: UseRealtimeMetrics
             uptimeInDays: Math.floor((Date.now() - new Date(newMetrics.timestamp).getTime()) / (1000 * 60 * 60 * 24))
           };
 
-          console.log('Transformed metrics:', transformedMetrics);
+          console.log('Transformed real-time metrics:', transformedMetrics);
 
-          // Force re-render by creating new objects
-          setLatestMetrics({ ...transformedMetrics });
+          setLatestMetrics(transformedMetrics);
           setMetricsHistory(prev => [...prev.slice(-19), transformedMetrics]);
           
           toast.success('Live metrics updated', {
