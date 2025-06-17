@@ -1,7 +1,7 @@
 
 import { RedisPerformanceMetrics } from "@/types/redis";
 import MetricCard from "./MetricCard";
-import { CircleGauge, Database, Clock3, Server, Gauge, Cpu, HardDrive, Scale, Calendar, Activity } from "lucide-react";
+import { CircleGauge, Database, Clock3, Server, Gauge, Cpu, HardDrive, Scale, Calendar, Activity, BarChart3, TrendingUp } from "lucide-react";
 
 interface HeaderProps {
   metrics: RedisPerformanceMetrics;
@@ -22,6 +22,12 @@ const Header = ({ metrics }: HeaderProps) => {
 
   const formatOpsPerSec = (ops?: number) => {
     return ops ? `${ops.toLocaleString()}/sec` : 'N/A';
+  };
+
+  const formatUptime = (days?: number) => {
+    if (!days) return 'N/A';
+    if (days < 1) return '< 1 day';
+    return `${Math.floor(days)} days`;
   };
 
   return (
@@ -78,6 +84,33 @@ const Header = ({ metrics }: HeaderProps) => {
           title="Delete Operations"
           value={formatNumber(metrics.operations.deletes)}
           icon={<Server className="h-5 w-5" />}
+        />
+      </div>
+
+      {/* Additional Metrics Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+        <MetricCard 
+          title="Database Size"
+          value={formatNumber(metrics.dbSize)}
+          icon={<HardDrive className="h-5 w-5" />}
+        />
+
+        <MetricCard 
+          title="Keyspace Hits"
+          value={formatNumber(metrics.keyspaceHits)}
+          icon={<TrendingUp className="h-5 w-5" />}
+        />
+
+        <MetricCard 
+          title="Keyspace Misses"
+          value={formatNumber(metrics.keyspaceMisses)}
+          icon={<BarChart3 className="h-5 w-5" />}
+        />
+
+        <MetricCard 
+          title="Uptime"
+          value={formatUptime(metrics.uptimeInDays)}
+          icon={<Calendar className="h-5 w-5" />}
         />
       </div>
     </div>
