@@ -140,7 +140,7 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
         <div className="ml-4">
           <div className="text-sm text-gray-500 mb-1">Health Score</div>
           <div className="flex items-center mb-1">
-            <span className="text-2xl font-bold">{healthScore}/100</span>
+            <span className="text-2xl font-bold text-gray-900">{healthScore}/100</span>
             <span className={`ml-3 text-lg font-medium ${healthColor}`}>
               {healthStatus}
             </span>
@@ -153,19 +153,19 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
       <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
         <div className="text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wide">Hit Ratio</div>
-          <div className="text-lg font-semibold">{(metrics.overallHitRatio * 100).toFixed(1)}%</div>
+          <div className="text-lg font-semibold text-gray-900">{(metrics.overallHitRatio * 100).toFixed(1)}%</div>
         </div>
         <div className="text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wide">Ops/Sec</div>
-          <div className="text-lg font-semibold">{(metrics.instantaneousOpsPerSec || 0).toLocaleString()}</div>
+          <div className="text-lg font-semibold text-gray-900">{(metrics.instantaneousOpsPerSec || 0).toLocaleString()}</div>
         </div>
         <div className="text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wide">CPU Usage</div>
-          <div className="text-lg font-semibold">{(metrics.cpuUtilization || 0).toFixed(1)}%</div>
+          <div className="text-lg font-semibold text-gray-900">{(metrics.cpuUtilization || 0).toFixed(1)}%</div>
         </div>
         <div className="text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wide">Response Time</div>
-          <div className="text-lg font-semibold">{metrics.avgResponseTime.toFixed(1)}ms</div>
+          <div className="text-lg font-semibold text-gray-900">{metrics.avgResponseTime.toFixed(1)}ms</div>
         </div>
       </div>
       
