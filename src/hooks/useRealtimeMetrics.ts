@@ -15,6 +15,7 @@ export const useRealtimeMetrics = ({ connectionId, enabled }: UseRealtimeMetrics
 
   useEffect(() => {
     if (!enabled || !connectionId) {
+      console.log('Real-time metrics disabled or no connection ID');
       return;
     }
 
@@ -49,21 +50,22 @@ export const useRealtimeMetrics = ({ connectionId, enabled }: UseRealtimeMetrics
             },
             operations: newMetrics.operations || { reads: 0, writes: 0, deletes: 0 },
             cpuUtilization: newMetrics.cpu_utilization,
-            dbSize: newMetrics.cache_hits + newMetrics.cache_misses, // Approximate from available data
+            dbSize: newMetrics.cache_hits + newMetrics.cache_misses,
             keyspaceHits: newMetrics.cache_hits,
             keyspaceMisses: newMetrics.cache_misses,
             usedCpuSys: newMetrics.cpu_utilization,
             usedMemoryHuman: `${Math.round((newMetrics.memory_used_bytes || 0) / (1024 * 1024))}M`,
             usedMemoryPeakHuman: `${Math.round((newMetrics.memory_peak_bytes || 0) / (1024 * 1024))}M`,
-            memFragmentationRatio: 1.0, // Default value as this might not be in DB
-            uptimeInDays: Math.floor(Date.now() / (1000 * 60 * 60 * 24)) // Approximate
+            memFragmentationRatio: 1.0,
+            uptimeInDays: Math.floor(Date.now() / (1000 * 60 * 60 * 24)),
+            instantaneousOpsPerSec: newMetrics.instantaneous_ops_per_sec || 0
           };
 
           setLatestMetrics(transformedMetrics);
-          setMetricsHistory(prev => [...prev.slice(-99), transformedMetrics]); // Keep last 100 records
+          setMetricsHistory(prev => [...prev.slice(-99), transformedMetrics]);
           
           toast.success('Live metrics updated', {
-            description: `Hit ratio: ${(transformedMetrics.overallHitRatio * 100).toFixed(1)}%`
+            description: `Hit ratio: ${(transformedMetrics.overallHitRatio * 100).toFixed(1)}% | Ops/sec: ${transformedMetrics.instantaneousOpsPerSec}`
           });
         }
       )

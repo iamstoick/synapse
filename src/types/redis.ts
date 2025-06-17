@@ -1,3 +1,4 @@
+
 export interface CacheLevel {
   level: number;
   hitRatio: number;
@@ -32,6 +33,7 @@ export interface RedisPerformanceMetrics {
   usedMemoryPeakHuman?: string;
   memFragmentationRatio?: number;
   uptimeInDays?: number;
+  instantaneousOpsPerSec?: number;
 }
 
 export interface TimeSeriesData {

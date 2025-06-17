@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { connect } from "https://deno.land/x/redis@v0.29.0/mod.ts"
 
@@ -24,6 +25,7 @@ function parseRedisInfo(info: string) {
     usedMemoryPeakHuman: '',
     memFragmentationRatio: 0,
     uptimeInDays: 0,
+    instantaneousOpsPerSec: 0,
     operations: {
       reads: 0,
       writes: 0,
@@ -79,6 +81,9 @@ function parseRedisInfo(info: string) {
           metrics.usedCpuSys = parseFloat(value) || 0;
           metrics.cpuUtilization = parseFloat(value) || 0;
           break;
+        case 'instantaneous_ops_per_sec':
+          metrics.instantaneousOpsPerSec = parseInt(value) || 0;
+          break;
         case 'used_memory_human':
           metrics.usedMemoryHuman = value.trim();
           break;
@@ -90,6 +95,41 @@ function parseRedisInfo(info: string) {
           break;
         case 'uptime_in_days':
           metrics.uptimeInDays = parseInt(value) || 0;
+          break;
+        // Capture operation counts from command stats
+        case 'cmdstat_get':
+        case 'cmdstat_mget':
+        case 'cmdstat_hget':
+        case 'cmdstat_hgetall':
+          const readMatch = value.match(/calls=(\d+)/);
+          if (readMatch) {
+            metrics.operations.reads += parseInt(readMatch[1]) || 0;
+          }
+          break;
+        case 'cmdstat_set':
+        case 'cmdstat_mset':
+        case 'cmdstat_hset':
+        case 'cmdstat_hmset':
+        case 'cmdstat_lpush':
+        case 'cmdstat_rpush':
+        case 'cmdstat_sadd':
+        case 'cmdstat_zadd':
+          const writeMatch = value.match(/calls=(\d+)/);
+          if (writeMatch) {
+            metrics.operations.writes += parseInt(writeMatch[1]) || 0;
+          }
+          break;
+        case 'cmdstat_del':
+        case 'cmdstat_unlink':
+        case 'cmdstat_hdel':
+        case 'cmdstat_lpop':
+        case 'cmdstat_rpop':
+        case 'cmdstat_srem':
+        case 'cmdstat_zrem':
+          const deleteMatch = value.match(/calls=(\d+)/);
+          if (deleteMatch) {
+            metrics.operations.deletes += parseInt(deleteMatch[1]) || 0;
+          }
           break;
       }
     });
@@ -136,8 +176,8 @@ serve(async (req) => {
       )
     ]);
 
-    // Get Redis INFO
-    const info = await redis.info();
+    // Get Redis INFO with all sections
+    const info = await redis.info('all');
     
     // Get DBSIZE
     const dbSize = await redis.dbsize();
