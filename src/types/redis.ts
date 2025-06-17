@@ -33,6 +33,7 @@ export interface RedisPerformanceMetrics {
   usedMemoryPeakHuman?: string;
   memFragmentationRatio?: number;
   uptimeInDays?: number;
+  uptimeInSeconds?: number;
   instantaneousOpsPerSec?: number;
 }
 

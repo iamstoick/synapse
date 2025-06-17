@@ -1,4 +1,3 @@
-
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Info, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Activity } from "lucide-react";
 
@@ -8,19 +7,19 @@ interface InfoPanelProps {
 
 const InfoPanel = ({ metrics }: InfoPanelProps) => {
   // Enhanced health score calculation
-  const calculateHealthScore = (ratio: number, responseTime: number, cpuUsage: number, opsPerSec: number) => {
+  const calculateHealthScore = (ratio: number, responseTime: number, cpuSeconds: number, opsPerSec: number) => {
     // Hit ratio score (40% weight)
     const hitRatioScore = ratio * 100;
     
     // Response time score (25% weight) - penalize high response times more severely
     const responseTimeScore = Math.max(0, 100 - Math.pow(responseTime, 1.5));
     
-    // CPU usage score (25% weight) - optimal range is 20-70%
+    // CPU seconds score (25% weight) - lower CPU seconds are better
     let cpuScore = 100;
-    if (cpuUsage > 80) {
-      cpuScore = Math.max(0, 100 - (cpuUsage - 80) * 3);
-    } else if (cpuUsage < 10) {
-      cpuScore = 80; // Low CPU might indicate underutilization
+    if (cpuSeconds > 1000) {
+      cpuScore = Math.max(0, 100 - (cpuSeconds / 1000) * 10);
+    } else if (cpuSeconds < 10) {
+      cpuScore = 80; // Very low CPU might indicate underutilization
     }
     
     // Operations throughput score (10% weight) - higher is generally better up to a point
@@ -89,11 +88,11 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
       insights.push("🎯 Excellent hit ratio! Cache is highly effective.");
     }
     
-    // CPU usage analysis
-    const cpuUsage = metrics.cpuUtilization || 0;
-    if (cpuUsage > 80) {
+    // CPU usage analysis (now in seconds)
+    const cpuSeconds = metrics.cpuUtilization || 0;
+    if (cpuSeconds > 1000) {
       insights.push("🔥 High CPU usage detected. Consider scaling or optimizing operations.");
-    } else if (cpuUsage < 10) {
+    } else if (cpuSeconds < 10) {
       insights.push("💤 Low CPU usage might indicate underutilization or low traffic.");
     }
     
@@ -161,7 +160,7 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
         </div>
         <div className="text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wide">CPU Usage</div>
-          <div className="text-lg font-semibold text-gray-900">{(metrics.cpuUtilization || 0).toFixed(1)}%</div>
+          <div className="text-lg font-semibold text-gray-900">{(metrics.cpuUtilization || 0).toFixed(1)}s</div>
         </div>
         <div className="text-center">
           <div className="text-xs text-gray-500 uppercase tracking-wide">Response Time</div>

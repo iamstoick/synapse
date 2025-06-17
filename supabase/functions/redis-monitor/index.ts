@@ -25,6 +25,7 @@ function parseRedisInfo(info: string) {
     usedMemoryPeakHuman: '',
     memFragmentationRatio: 0,
     uptimeInDays: 0,
+    uptimeInSeconds: 0,
     instantaneousOpsPerSec: 0,
     operations: {
       reads: 0,
@@ -81,6 +82,10 @@ function parseRedisInfo(info: string) {
           metrics.usedCpuSys = parseFloat(value) || 0;
           metrics.cpuUtilization = parseFloat(value) || 0;
           break;
+        case 'uptime_in_seconds':
+          metrics.uptimeInSeconds = parseInt(value) || 0;
+          metrics.uptimeInDays = (parseInt(value) || 0) / (24 * 60 * 60);
+          break;
         case 'instantaneous_ops_per_sec':
           metrics.instantaneousOpsPerSec = parseInt(value) || 0;
           break;
@@ -92,9 +97,6 @@ function parseRedisInfo(info: string) {
           break;
         case 'mem_fragmentation_ratio':
           metrics.memFragmentationRatio = parseFloat(value) || 0;
-          break;
-        case 'uptime_in_days':
-          metrics.uptimeInDays = parseInt(value) || 0;
           break;
         // Capture operation counts from command stats
         case 'cmdstat_get':

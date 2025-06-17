@@ -57,7 +57,8 @@ export const useRealtimeMetrics = ({ connectionId, enabled }: UseRealtimeMetrics
             usedMemoryHuman: `${Math.round((newMetrics.memory_used_bytes || 0) / (1024 * 1024))}M`,
             usedMemoryPeakHuman: `${Math.round((newMetrics.memory_peak_bytes || 0) / (1024 * 1024))}M`,
             memFragmentationRatio: 1.0,
-            uptimeInDays: Math.floor(Date.now() / (1000 * 60 * 60 * 24)),
+            uptimeInDays: Math.floor((newMetrics.uptime_in_seconds || 0) / (24 * 60 * 60)),
+            uptimeInSeconds: newMetrics.uptime_in_seconds || 0,
             instantaneousOpsPerSec: newMetrics.instantaneous_ops_per_sec || 0
           };
 

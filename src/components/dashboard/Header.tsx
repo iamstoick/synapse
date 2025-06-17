@@ -12,8 +12,8 @@ const Header = ({ metrics }: HeaderProps) => {
     return `${(ratio * 100).toFixed(2)}%`;
   };
 
-  const formatCpuUtilization = (cpu?: number) => {
-    return cpu ? `${cpu.toFixed(2)}%` : 'N/A';
+  const formatCpuSeconds = (cpu?: number) => {
+    return cpu ? `${cpu.toFixed(2)}s` : 'N/A';
   };
 
   const formatNumber = (value?: number) => {
@@ -24,10 +24,20 @@ const Header = ({ metrics }: HeaderProps) => {
     return ops ? `${ops.toLocaleString()}/sec` : 'N/A';
   };
 
-  const formatUptime = (days?: number) => {
-    if (!days) return 'N/A';
-    if (days < 1) return '< 1 day';
-    return `${Math.floor(days)} days`;
+  const formatUptime = (seconds?: number) => {
+    if (!seconds) return 'N/A';
+    
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+    
+    if (days > 0) {
+      return `${days}d ${hours}h ${minutes}m`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
   };
 
   return (
@@ -61,7 +71,7 @@ const Header = ({ metrics }: HeaderProps) => {
 
         <MetricCard 
           title="CPU Usage"
-          value={formatCpuUtilization(metrics.cpuUtilization)}
+          value={formatCpuSeconds(metrics.cpuUtilization)}
           icon={<Cpu className="h-5 w-5" />}
         />
       </div>
@@ -109,7 +119,7 @@ const Header = ({ metrics }: HeaderProps) => {
 
         <MetricCard 
           title="Uptime"
-          value={formatUptime(metrics.uptimeInDays)}
+          value={formatUptime(metrics.uptimeInSeconds)}
           icon={<Calendar className="h-5 w-5" />}
         />
       </div>
