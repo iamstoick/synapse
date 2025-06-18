@@ -1,4 +1,3 @@
-
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Info, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Activity, Zap, Shield, Target } from "lucide-react";
 
@@ -98,6 +97,17 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
     const totalOps = metrics.totalRequests;
     const memUsagePercent = (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
     const opsPerSec = metrics.instantaneousOpsPerSec || 0;
+    const fragmentationRatio = metrics.memoryAnalysis?.fragmentationRatio || 1.0;
+    
+    // Memory Fragmentation Analysis - HIGH PRIORITY
+    if (fragmentationRatio > 1.5) {
+      insights.push({
+        type: "warning",
+        icon: "💾",
+        title: "Critical Memory Fragmentation",
+        message: "Memory fragmentation is higher than 1.5. This indicates excessive memory fragmentation. A large portion of the physical RAM is being wasted. This can lead to: Premature OOM errors - The application might hit the maxmemory limit (based on used_memory_rss) sooner than expected, even if used_memory is low. Increased swap usage - If the OS runs out of physical RAM, it might start swapping Redis's fragmented memory to disk, leading to drastic performance degradation. Slower performance - Memory allocation can become slower as the allocator struggles to find suitable contiguous blocks."
+      });
+    }
     
     // Cache Performance Analysis
     if (metrics.overallHitRatio < 0.5) {
@@ -242,7 +252,6 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Performance Assessment</h2>
       </div>
       
-      {/* Health Score Section */}
       <div className={`${healthBgColor} ${healthBorderColor} border-2 rounded-xl p-6 mb-6`}>
         <div className="flex items-center mb-4">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center ${healthColor} bg-white dark:bg-gray-800 border-2 border-current shadow-lg`}>
@@ -260,7 +269,6 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
           </div>
         </div>
 
-        {/* Performance Metrics Summary */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
           <div className="text-center">
             <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Hit Ratio</div>

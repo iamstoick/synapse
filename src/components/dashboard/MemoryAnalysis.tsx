@@ -1,7 +1,7 @@
-
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Database, Trash2, AlertTriangle } from "lucide-react";
 import MetricCard from "./MetricCard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MemoryAnalysisProps {
   metrics: RedisPerformanceMetrics;
@@ -35,30 +35,69 @@ const MemoryAnalysis = ({ metrics }: MemoryAnalysisProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard
-          title="Memory Fragmentation"
-          value={memoryAnalysis.fragmentationRatio.toFixed(2)}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          trend={memoryAnalysis.fragmentationRatio > 1.2 ? "up" : "neutral"}
-          trendValue={fragmentationStatus.status}
-          className="border-l-4 border-l-purple-500"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Memory Fragmentation"
+                  value={memoryAnalysis.fragmentationRatio.toFixed(2)}
+                  icon={<AlertTriangle className="w-5 h-5" />}
+                  trend={memoryAnalysis.fragmentationRatio > 1.2 ? "up" : "neutral"}
+                  trendValue={fragmentationStatus.status}
+                  className="border-l-4 border-l-purple-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-md">
+              <div className="space-y-2">
+                <p className="font-medium">Memory Fragmentation Analysis:</p>
+                <p><strong>Ratio ≈ 1.0:</strong> Ideal. Redis is using memory very efficiently with little fragmentation (1.01-1.05 is healthy).</p>
+                <p><strong>Ratio 1.2-1.5:</strong> Moderate fragmentation. Redis consumes more physical memory than allocated.</p>
+                <p><strong>Ratio > 1.5:</strong> Excessive fragmentation. Large portion of RAM is wasted, leading to premature OOM errors and slower performance.</p>
+                <p><strong>Ratio < 1.0:</strong> Critical state. Redis is using swap memory, severely impacting performance.</p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        <MetricCard
-          title="Evicted Keys"
-          value={memoryAnalysis.evictedKeys.toLocaleString()}
-          icon={<Trash2 className="w-5 h-5" />}
-          trend={memoryAnalysis.evictedKeys > 0 ? "up" : "neutral"}
-          className="border-l-4 border-l-red-500"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Evicted Keys"
+                  value={memoryAnalysis.evictedKeys.toLocaleString()}
+                  icon={<Trash2 className="w-5 h-5" />}
+                  trend={memoryAnalysis.evictedKeys > 0 ? "up" : "neutral"}
+                  className="border-l-4 border-l-red-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Number of keys removed by Redis when memory limit is reached. High values indicate memory pressure and may require increasing maxmemory or optimizing data structure usage.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        <MetricCard
-          title="Expired Keys"
-          value={memoryAnalysis.expiredKeys.toLocaleString()}
-          icon={<Database className="w-5 h-5" />}
-          trend="neutral"
-          className="border-l-4 border-l-blue-500"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Expired Keys"
+                  value={memoryAnalysis.expiredKeys.toLocaleString()}
+                  icon={<Database className="w-5 h-5" />}
+                  trend="neutral"
+                  className="border-l-4 border-l-blue-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total number of keys that have expired and been automatically removed by Redis. This includes both passive expiration (when accessing expired keys) and active expiration (background cleanup).</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">

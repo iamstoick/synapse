@@ -1,7 +1,7 @@
-
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Users, UserPlus, UserX } from "lucide-react";
 import MetricCard from "./MetricCard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ClientsConnectionsProps {
   metrics: RedisPerformanceMetrics;
@@ -41,30 +41,63 @@ const ClientsConnections = ({ metrics }: ClientsConnectionsProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <MetricCard
-          title="Connected Clients"
-          value={clients.connectedClients.toLocaleString()}
-          icon={<Users className="w-5 h-5" />}
-          trend={connectionUtilization > 60 ? "up" : "neutral"}
-          trendValue={`${connectionUtilization.toFixed(1)}%`}
-          className="border-l-4 border-l-blue-500"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Connected Clients"
+                  value={clients.connectedClients.toLocaleString()}
+                  icon={<Users className="w-5 h-5" />}
+                  trend={connectionUtilization > 60 ? "up" : "neutral"}
+                  trendValue={`${connectionUtilization.toFixed(1)}%`}
+                  className="border-l-4 border-l-blue-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Number of currently active client connections to Redis. Each connection consumes memory and resources. Monitor for connection leaks or unexpected spikes.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        <MetricCard
-          title="Total Connections"
-          value={clients.totalConnectionsReceived.toLocaleString()}
-          icon={<UserPlus className="w-5 h-5" />}
-          trend="neutral"
-          className="border-l-4 border-l-green-500"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Total Connections"
+                  value={clients.totalConnectionsReceived.toLocaleString()}
+                  icon={<UserPlus className="w-5 h-5" />}
+                  trend="neutral"
+                  className="border-l-4 border-l-green-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total number of connections received since Redis startup. This includes both successful and rejected connections. Useful for monitoring traffic patterns over time.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
-        <MetricCard
-          title="Rejected Connections"
-          value={clients.rejectedConnections.toLocaleString()}
-          icon={<UserX className="w-5 h-5" />}
-          trend={clients.rejectedConnections > 0 ? "up" : "neutral"}
-          className="border-l-4 border-l-red-500"
-        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Rejected Connections"
+                  value={clients.rejectedConnections.toLocaleString()}
+                  icon={<UserX className="w-5 h-5" />}
+                  trend={clients.rejectedConnections > 0 ? "up" : "neutral"}
+                  className="border-l-4 border-l-red-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Number of connections rejected due to reaching the maxclients limit. Non-zero values indicate that clients are being denied access and maxclients should be increased.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

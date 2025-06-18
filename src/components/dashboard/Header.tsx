@@ -1,4 +1,3 @@
-
 import { RedisPerformanceMetrics } from "@/types/redis";
 import MetricCard from "./MetricCard";
 import { CircleGauge, Database, Clock3, Calendar, Server, Cpu, HardDrive, BarChart3, TrendingUp, Activity } from "lucide-react";
@@ -285,7 +284,7 @@ const Header = ({ metrics }: HeaderProps) => {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Number of failed lookups of keys in the main dictionary</p>
+                  <p>Number of failed lookups of keys in the main dictionary. High miss rates may indicate inefficient cache usage or frequent requests for non-existent keys.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
