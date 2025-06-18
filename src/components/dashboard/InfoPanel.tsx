@@ -105,13 +105,17 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
         type: "warning",
         icon: "💾",
         title: "Critical Memory Fragmentation",
-        message: `Memory fragmentation is higher than 1.5. This indicates excessive memory fragmentation. A large portion of the physical RAM is being wasted. This can lead to:
-              <br/><br/>
-               - <b>Premature OOM errors:</b> The application might hit the maxmemory limit (based on used_memory_rss) sooner than expected, even if used_memory is low.
-              <br/><br/>
-               - <b>Increased swap usage:</b> If the OS runs out of physical RAM, it might start swapping Redis's fragmented memory to disk, leading to drastic performance degradation.
-              <br/><br/>
-               - <b>Slower performance:</b> Memory allocation can become slower as the allocator struggles to find suitable contiguous blocks.`,
+        message: (
+          <>
+            Memory fragmentation is higher than 1.5. This indicates excessive memory fragmentation. A large portion of the physical RAM is being wasted. This can lead to:
+            <br /><br />
+            - <b>Premature OOM errors:</b> The application might hit the maxmemory limit (based on used_memory_rss) sooner than expected, even if used_memory is low.
+            <br /><br />
+            - <b>Increased swap usage:</b> If the OS runs out of physical RAM, it might start swapping Redis's fragmented memory to disk, leading to drastic performance degradation.
+            <br /><br />
+            - <b>Slower performance:</b> Memory allocation can become slower as the allocator struggles to find suitable contiguous blocks.
+          </>
+        ),
       });
     }
     
