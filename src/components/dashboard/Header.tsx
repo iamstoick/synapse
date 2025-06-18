@@ -46,7 +46,6 @@ const Header = ({ metrics }: HeaderProps) => {
         </p>
       </div>
       
-      {/* Top Priority Metrics */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 text-center">Key Performance Indicators</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -63,7 +62,7 @@ const Header = ({ metrics }: HeaderProps) => {
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Percentage of cache requests that were served from memory vs disk. Higher is better (>90% is excellent)</p>
+                <p>Percentage of cache requests that were served from memory vs disk. Higher is better (greater than 90% is excellent)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -99,7 +98,7 @@ const Header = ({ metrics }: HeaderProps) => {
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Average latency for Redis commands. Lower is better (< 1ms is excellent)</p>
+                <p>Average latency for Redis commands. Lower is better (less than 1ms is excellent)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -124,9 +123,7 @@ const Header = ({ metrics }: HeaderProps) => {
         </div>
       </div>
 
-      {/* Secondary Metrics */}
       <div className="space-y-6">
-        {/* Operations and Performance */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Operations & Performance</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -200,7 +197,6 @@ const Header = ({ metrics }: HeaderProps) => {
           </div>
         </div>
 
-        {/* Operation Types */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Operation Breakdown</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -257,7 +253,6 @@ const Header = ({ metrics }: HeaderProps) => {
           </div>
         </div>
 
-        {/* Keyspace Statistics */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Keyspace Statistics</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
