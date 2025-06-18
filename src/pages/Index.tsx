@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { RedisPerformanceMetrics, RedisConnection } from "@/types/redis";
 import Header from "@/components/dashboard/Header";
@@ -117,11 +116,11 @@ const Index = () => {
       setLastUpdated(new Date());
     }
   }, [latestMetrics]);
-  
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar onRefresh={handleRefresh} lastUpdated={lastUpdated} />
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <RedisConnectionForm
           onConnect={handleConnect}
           onDisconnect={handleDisconnect}
@@ -130,47 +129,50 @@ const Index = () => {
         />
 
         {connection && (
-          <div className="mb-6 flex items-center justify-between bg-card p-4 rounded-lg shadow-sm">
-            <RealtimeIndicator 
-              isConnected={isRealtimeConnected} 
-              lastUpdate={lastUpdated}
-            />
-            <button
-              onClick={toggleRealtime}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                isRealtimeEnabled
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-green-500 hover:bg-green-600 text-white'
-              }`}
-            >
-              {isRealtimeEnabled ? 'Disable Real-time' : 'Enable Real-time'}
-            </button>
+          <div className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <RealtimeIndicator 
+                isConnected={isRealtimeConnected} 
+                lastUpdate={lastUpdated}
+              />
+              <button
+                onClick={toggleRealtime}
+                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
+                  isRealtimeEnabled
+                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg'
+                    : 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
+                }`}
+              >
+                {isRealtimeEnabled ? 'Disable Real-time' : 'Enable Real-time'}
+              </button>
+            </div>
           </div>
         )}
         
         {currentMetrics && (
-          <>
+          <div className="space-y-8">
             <Header metrics={currentMetrics} />
             
-            {isRealtimeEnabled && (
-              <div className="mb-6">
+            {isRealtimeEnabled && metricsHistory.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <MetricsStream metricsHistory={metricsHistory} />
               </div>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <MemoryUsage metrics={currentMetrics} />
-              <OperationsChart metrics={currentMetrics} />
-              <KeyspaceChart metrics={currentMetrics} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="space-y-8">
+                <MemoryUsage metrics={currentMetrics} />
+                <InfoPanel metrics={currentMetrics} />
+              </div>
+              <div className="space-y-8">
+                <OperationsChart metrics={currentMetrics} />
+                <KeyspaceChart metrics={currentMetrics} />
+              </div>
             </div>
-            
-            <div className="mb-6">
-              <InfoPanel metrics={currentMetrics} />
-            </div>
-          </>
+          </div>
         )}
         
-        <div className="text-center text-sm text-gray-500 py-4">
+        <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8 mt-12">
           <p>
             {connection?.isConnected 
               ? `Connected to Redis ${isRealtimeEnabled ? '(Real-time streaming active)' : '(Polling mode)'}` 

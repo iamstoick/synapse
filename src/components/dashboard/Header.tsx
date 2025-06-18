@@ -1,7 +1,7 @@
 
 import { RedisPerformanceMetrics } from "@/types/redis";
 import MetricCard from "./MetricCard";
-import { CircleGauge, Database, Clock3, Server, Gauge, Cpu, HardDrive, Scale, Calendar, Activity, BarChart3, TrendingUp } from "lucide-react";
+import { CircleGauge, Database, Clock3, Calendar, Server, Cpu, HardDrive, BarChart3, TrendingUp, Activity } from "lucide-react";
 
 interface HeaderProps {
   metrics: RedisPerformanceMetrics;
@@ -12,16 +12,8 @@ const Header = ({ metrics }: HeaderProps) => {
     return `${(ratio * 100).toFixed(2)}%`;
   };
 
-  const formatCpuSeconds = (cpu?: number) => {
-    return cpu ? `${cpu.toFixed(2)}s` : 'N/A';
-  };
-
   const formatNumber = (value?: number) => {
     return value?.toLocaleString() ?? 'N/A';
-  };
-
-  const formatOpsPerSec = (ops?: number) => {
-    return ops ? `${ops.toLocaleString()}/sec` : 'N/A';
   };
 
   const formatUptime = (seconds?: number) => {
@@ -40,88 +32,117 @@ const Header = ({ metrics }: HeaderProps) => {
     }
   };
 
+  const formatResponseTime = (time: number) => {
+    return `${time.toFixed(2)}ms`;
+  };
+
   return (
-    <div className="mb-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Redis Performance Monitor</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+    <div className="mb-8 space-y-6">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Redis Performance Monitor</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400">
           Real-time cache performance metrics and health assessment
         </p>
       </div>
       
-      {/* Primary Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-        <MetricCard 
-          title="Overall Cache Hit Ratio"
-          value={formatHitRatio(metrics.overallHitRatio)}
-          icon={<CircleGauge className="h-5 w-5" />}
-        />
-
-        <MetricCard 
-          title="Total Commands Processed"
-          value={formatNumber(metrics.totalRequests)}
-          icon={<Database className="h-5 w-5" />}
-        />
-
-        <MetricCard 
-          title="Instantaneous Ops/Sec"
-          value={formatOpsPerSec(metrics.instantaneousOpsPerSec)}
-          icon={<Activity className="h-5 w-5" />}
-        />
-
-        <MetricCard 
-          title="CPU Usage"
-          value={formatCpuSeconds(metrics.cpuUtilization)}
-          icon={<Cpu className="h-5 w-5" />}
-        />
+      {/* Top Priority Metrics */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 text-center">Key Performance Indicators</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <MetricCard 
+            title="Overall Cache Hit Ratio"
+            value={formatHitRatio(metrics.overallHitRatio)}
+            icon={<CircleGauge className="h-6 w-6" />}
+            className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
+          />
+          <MetricCard 
+            title="Database Size"
+            value={formatNumber(metrics.dbSize)}
+            icon={<Database className="h-6 w-6" />}
+            className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
+          />
+          <MetricCard 
+            title="Response Time"
+            value={formatResponseTime(metrics.avgResponseTime)}
+            icon={<Clock3 className="h-6 w-6" />}
+            className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
+          />
+          <MetricCard 
+            title="Uptime"
+            value={formatUptime(metrics.uptimeInSeconds)}
+            icon={<Calendar className="h-6 w-6" />}
+            className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow"
+          />
+        </div>
       </div>
 
-      {/* Operations Breakdown Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-        <MetricCard 
-          title="Read Operations"
-          value={formatNumber(metrics.operations.reads)}
-          icon={<Server className="h-5 w-5" />}
-        />
+      {/* Secondary Metrics */}
+      <div className="space-y-6">
+        {/* Operations and Performance */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Operations & Performance</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard 
+              title="Total Commands Processed"
+              value={formatNumber(metrics.totalRequests)}
+              icon={<Server className="h-5 w-5" />}
+            />
+            <MetricCard 
+              title="Instantaneous Ops/Sec"
+              value={`${formatNumber(metrics.instantaneousOpsPerSec)}/sec`}
+              icon={<Activity className="h-5 w-5" />}
+            />
+            <MetricCard 
+              title="CPU Usage"
+              value={`${(metrics.cpuUtilization || 0).toFixed(2)}s`}
+              icon={<Cpu className="h-5 w-5" />}
+            />
+            <MetricCard 
+              title="Memory Used"
+              value={`${metrics.memoryUsage.used}MB`}
+              icon={<HardDrive className="h-5 w-5" />}
+            />
+          </div>
+        </div>
 
-        <MetricCard 
-          title="Write Operations"
-          value={formatNumber(metrics.operations.writes)}
-          icon={<Server className="h-5 w-5" />}
-        />
+        {/* Operation Types */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Operation Breakdown</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <MetricCard 
+              title="Read Operations"
+              value={formatNumber(metrics.operations.reads)}
+              icon={<Server className="h-5 w-5" />}
+            />
+            <MetricCard 
+              title="Write Operations"
+              value={formatNumber(metrics.operations.writes)}
+              icon={<Server className="h-5 w-5" />}
+            />
+            <MetricCard 
+              title="Delete Operations"
+              value={formatNumber(metrics.operations.deletes)}
+              icon={<Server className="h-5 w-5" />}
+            />
+          </div>
+        </div>
 
-        <MetricCard 
-          title="Delete Operations"
-          value={formatNumber(metrics.operations.deletes)}
-          icon={<Server className="h-5 w-5" />}
-        />
-      </div>
-
-      {/* Additional Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-        <MetricCard 
-          title="Database Size"
-          value={formatNumber(metrics.dbSize)}
-          icon={<HardDrive className="h-5 w-5" />}
-        />
-
-        <MetricCard 
-          title="Keyspace Hits"
-          value={formatNumber(metrics.keyspaceHits)}
-          icon={<TrendingUp className="h-5 w-5" />}
-        />
-
-        <MetricCard 
-          title="Keyspace Misses"
-          value={formatNumber(metrics.keyspaceMisses)}
-          icon={<BarChart3 className="h-5 w-5" />}
-        />
-
-        <MetricCard 
-          title="Uptime"
-          value={formatUptime(metrics.uptimeInSeconds)}
-          icon={<Calendar className="h-5 w-5" />}
-        />
+        {/* Keyspace Statistics */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Keyspace Statistics</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <MetricCard 
+              title="Keyspace Hits"
+              value={formatNumber(metrics.keyspaceHits)}
+              icon={<TrendingUp className="h-5 w-5" />}
+            />
+            <MetricCard 
+              title="Keyspace Misses"
+              value={formatNumber(metrics.keyspaceMisses)}
+              icon={<BarChart3 className="h-5 w-5" />}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
