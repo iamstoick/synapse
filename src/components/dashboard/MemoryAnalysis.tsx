@@ -54,8 +54,8 @@ const MemoryAnalysis = ({ metrics }: MemoryAnalysisProps) => {
                 <p className="font-medium">Memory Fragmentation Analysis:</p>
                 <p><strong>Ratio ≈ 1.0:</strong> Ideal. Redis is using memory very efficiently with little fragmentation (1.01-1.05 is healthy).</p>
                 <p><strong>Ratio 1.2-1.5:</strong> Moderate fragmentation. Redis consumes more physical memory than allocated.</p>
-                <p><strong>Ratio > 1.5:</strong> Excessive fragmentation. Large portion of RAM is wasted, leading to premature OOM errors and slower performance.</p>
-                <p><strong>Ratio < 1.0:</strong> Critical state. Redis is using swap memory, severely impacting performance.</p>
+                <p><strong>Ratio &gt; 1.5:</strong> Excessive fragmentation. Large portion of RAM is wasted, leading to premature OOM errors and slower performance.</p>
+                <p><strong>Ratio &lt; 1.0:</strong> Critical state. Redis is using swap memory, severely impacting performance.</p>
               </div>
             </TooltipContent>
           </Tooltip>
