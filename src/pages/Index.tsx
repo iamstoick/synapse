@@ -9,6 +9,10 @@ import InfoPanel from "@/components/dashboard/InfoPanel";
 import RedisConnectionForm from "@/components/dashboard/RedisConnectionForm";
 import RealtimeIndicator from "@/components/dashboard/RealtimeIndicator";
 import MetricsStream from "@/components/dashboard/MetricsStream";
+import SlowCommands from "@/components/dashboard/SlowCommands";
+import MemoryAnalysis from "@/components/dashboard/MemoryAnalysis";
+import PersistenceAnalysis from "@/components/dashboard/PersistenceAnalysis";
+import ClientsConnections from "@/components/dashboard/ClientsConnections";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,13 +23,11 @@ const Index = () => {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRealtimeEnabled, setIsRealtimeEnabled] = useState(false);
 
-  // Real-time metrics hook
   const { latestMetrics, metricsHistory, isConnected: isRealtimeConnected } = useRealtimeMetrics({
     connectionId: connection?.id,
     enabled: isRealtimeEnabled && !!connection?.id
   });
 
-  // Fetch metrics using React Query
   const { data: metrics = null, refetch } = useQuery({
     queryKey: ['redis-metrics', connection?.connectionString],
     queryFn: async () => {
@@ -39,7 +41,6 @@ const Index = () => {
         if (error) throw error;
         if (!data.success) throw new Error(data.error || 'Failed to fetch metrics');
 
-        // Save metrics to the database if we have a connection ID
         if (connection.id) {
           try {
             await supabase.from('redis_metrics').insert({
@@ -57,7 +58,6 @@ const Index = () => {
             });
           } catch (dbError) {
             console.error('Error saving metrics to database:', dbError);
-            // Don't throw here as we still want to show metrics even if saving fails
           }
         }
 
@@ -69,10 +69,9 @@ const Index = () => {
       }
     },
     enabled: !!connection?.connectionString && !isRealtimeEnabled,
-    refetchInterval: isRealtimeEnabled ? false : 10000 // Only poll when realtime is disabled
+    refetchInterval: isRealtimeEnabled ? false : 10000
   });
 
-  // Use real-time metrics if available, otherwise use polled metrics
   const currentMetrics = latestMetrics || metrics;
   
   const handleConnect = async (newConnection: RedisConnection) => {
@@ -103,14 +102,12 @@ const Index = () => {
     }
   };
   
-  // Initial data load and refresh setup
   useEffect(() => {
     if (connection?.connectionString && !isRealtimeEnabled) {
       handleRefresh();
     }
   }, [connection]);
 
-  // Update last updated time when real-time metrics change
   useEffect(() => {
     if (latestMetrics) {
       setLastUpdated(new Date());
@@ -162,12 +159,20 @@ const Index = () => {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               <div className="space-y-8">
                 <MemoryUsage metrics={currentMetrics} />
+                <MemoryAnalysis metrics={currentMetrics} />
                 <InfoPanel metrics={currentMetrics} />
               </div>
               <div className="space-y-8">
                 <OperationsChart metrics={currentMetrics} />
                 <KeyspaceChart metrics={currentMetrics} />
+                <SlowCommands metrics={currentMetrics} />
               </div>
+            </div>
+
+            {/* New sections in full width */}
+            <div className="grid grid-cols-1 gap-8">
+              <PersistenceAnalysis metrics={currentMetrics} />
+              <ClientsConnections metrics={currentMetrics} />
             </div>
           </div>
         )}

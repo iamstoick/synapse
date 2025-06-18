@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { connect } from "https://deno.land/x/redis@v0.29.0/mod.ts"
 
@@ -41,6 +40,26 @@ function parseRedisInfo(info: string) {
       used: 0,
       peak: 0,
       total: 0
+    },
+    // New metrics for additional sections
+    memoryAnalysis: {
+      fragmentationRatio: 0,
+      evictedKeys: 0,
+      expiredKeys: 0
+    },
+    persistence: {
+      rdbLastSaveTime: 0,
+      rdbChangesSinceLastSave: 0,
+      aofCurrentSize: 0,
+      aofBaseSize: 0,
+      lastForkUsec: 0
+    },
+    clients: {
+      connectedClients: 0,
+      totalConnectionsReceived: 0,
+      totalConnectionsReceived: 0,
+      rejectedConnections: 0,
+      maxClients: 0
     }
   };
 
@@ -97,8 +116,48 @@ function parseRedisInfo(info: string) {
           break;
         case 'mem_fragmentation_ratio':
           metrics.memFragmentationRatio = parseFloat(value) || 0;
+          metrics.memoryAnalysis.fragmentationRatio = parseFloat(value) || 0;
           break;
-        // Capture operation counts from command stats
+        
+        // Memory Analysis metrics
+        case 'evicted_keys':
+          metrics.memoryAnalysis.evictedKeys = parseInt(value) || 0;
+          break;
+        case 'expired_keys':
+          metrics.memoryAnalysis.expiredKeys = parseInt(value) || 0;
+          break;
+        
+        // Persistence metrics
+        case 'rdb_last_save_time':
+          metrics.persistence.rdbLastSaveTime = parseInt(value) || 0;
+          break;
+        case 'rdb_changes_since_last_save':
+          metrics.persistence.rdbChangesSinceLastSave = parseInt(value) || 0;
+          break;
+        case 'aof_current_size':
+          metrics.persistence.aofCurrentSize = parseInt(value) || 0;
+          break;
+        case 'aof_base_size':
+          metrics.persistence.aofBaseSize = parseInt(value) || 0;
+          break;
+        case 'latest_fork_usec':
+          metrics.persistence.lastForkUsec = parseInt(value) || 0;
+          break;
+        
+        // Client metrics
+        case 'connected_clients':
+          metrics.clients.connectedClients = parseInt(value) || 0;
+          break;
+        case 'total_connections_received':
+          metrics.clients.totalConnectionsReceived = parseInt(value) || 0;
+          break;
+        case 'rejected_connections':
+          metrics.clients.rejectedConnections = parseInt(value) || 0;
+          break;
+        case 'maxclients':
+          metrics.clients.maxClients = parseInt(value) || 0;
+          break;
+        
         case 'cmdstat_get':
         case 'cmdstat_mget':
         case 'cmdstat_hget':
@@ -137,12 +196,9 @@ function parseRedisInfo(info: string) {
     });
   });
 
-  // Calculate hit ratio
   const totalAccesses = metrics.cacheHits + metrics.cacheMisses;
   metrics.hitRatio = totalAccesses > 0 ? metrics.cacheHits / totalAccesses : 0;
   metrics.overallHitRatio = metrics.hitRatio;
-
-  // Set a reasonable default for avgResponseTime if we don't have it
   metrics.avgResponseTime = metrics.avgResponseTime || 5.0;
 
   return metrics;
@@ -184,9 +240,13 @@ serve(async (req) => {
     // Get DBSIZE
     const dbSize = await redis.dbsize();
     
+    // Get SLOWLOG
+    const slowlog = await redis.slowlog('get', 10);
+    
     // Parse metrics from INFO command
     const metrics = parseRedisInfo(info);
     metrics.dbSize = dbSize;
+    metrics.slowlog = slowlog;
     
     // Close Redis connection
     await redis.close();

@@ -1,4 +1,3 @@
-
 export interface CacheLevel {
   level: number;
   hitRatio: number;
@@ -6,6 +5,15 @@ export interface CacheLevel {
   misses: number;
   totalRequests: number;
   avgResponseTime: number;
+}
+
+export interface SlowlogEntry {
+  id: number;
+  timestamp: number;
+  duration: number;
+  command: string[];
+  clientIp?: string;
+  clientName?: string;
 }
 
 export interface RedisPerformanceMetrics {
@@ -35,6 +43,25 @@ export interface RedisPerformanceMetrics {
   uptimeInDays?: number;
   uptimeInSeconds?: number;
   instantaneousOpsPerSec?: number;
+  slowlog?: SlowlogEntry[];
+  memoryAnalysis?: {
+    fragmentationRatio: number;
+    evictedKeys: number;
+    expiredKeys: number;
+  };
+  persistence?: {
+    rdbLastSaveTime: number;
+    rdbChangesSinceLastSave: number;
+    aofCurrentSize: number;
+    aofBaseSize: number;
+    lastForkUsec: number;
+  };
+  clients?: {
+    connectedClients: number;
+    totalConnectionsReceived: number;
+    rejectedConnections: number;
+    maxClients: number;
+  };
 }
 
 export interface TimeSeriesData {
@@ -47,8 +74,8 @@ export interface TimeSeriesData {
 }
 
 export interface RedisConnection {
-  id?: string; // Added ID field
-  connectionString: string; // Full Redis CLI connection string
+  id?: string;
+  connectionString: string;
   host?: string;
   port?: number;
   password?: string;
