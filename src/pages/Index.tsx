@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useRealtimeMetrics } from "@/hooks/useRealtimeMetrics";
+import CpuUsage from "@/components/dashboard/CpuUsage";
 
 const Index = () => {
   const [connection, setConnection] = useState<RedisConnection | null>(null);
@@ -165,6 +166,7 @@ const Index = () => {
               <div className="space-y-8">
                 <OperationsChart metrics={currentMetrics} />
                 <KeyspaceChart metrics={currentMetrics} />
+                <CpuUsage metrics={currentMetrics} />
                 <SlowCommands metrics={currentMetrics} />
               </div>
             </div>

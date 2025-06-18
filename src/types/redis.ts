@@ -1,3 +1,4 @@
+
 export interface CacheLevel {
   level: number;
   hitRatio: number;
@@ -26,6 +27,7 @@ export interface RedisPerformanceMetrics {
     used: number;
     peak: number;
     total: number;
+    utilizationPercentage?: number;
   };
   operations: {
     reads: number;
@@ -52,7 +54,6 @@ export interface RedisPerformanceMetrics {
   persistence?: {
     rdbLastSaveTime: number;
     rdbChangesSinceLastSave: number;
-    rdbChangesSinceLastSave: number;
     aofCurrentSize: number;
     aofBaseSize: number;
     lastForkUsec: number;
@@ -62,6 +63,11 @@ export interface RedisPerformanceMetrics {
     totalConnectionsReceived: number;
     rejectedConnections: number;
     maxClients: number;
+  };
+  cpuUsage?: {
+    usedCpuSys: number;
+    usedCpuUser: number;
+    instantaneousCpuPercentage: number;
   };
 }
 

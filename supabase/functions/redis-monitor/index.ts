@@ -21,6 +21,7 @@ function parseRedisInfo(info: string) {
     keyspaceHits: 0,
     keyspaceMisses: 0,
     usedCpuSys: 0,
+    usedCpuUser: 0,
     usedMemoryHuman: '',
     usedMemoryPeakHuman: '',
     memFragmentationRatio: 0,
@@ -40,7 +41,8 @@ function parseRedisInfo(info: string) {
     memoryUsage: {
       used: 0,
       peak: 0,
-      total: 0
+      total: 0,
+      utilizationPercentage: 0
     },
     // New metrics for additional sections
     memoryAnalysis: {
@@ -58,9 +60,13 @@ function parseRedisInfo(info: string) {
     clients: {
       connectedClients: 0,
       totalConnectionsReceived: 0,
-      totalConnectionsReceived: 0,
       rejectedConnections: 0,
       maxClients: 0
+    },
+    cpuUsage: {
+      usedCpuSys: 0,
+      usedCpuUser: 0,
+      instantaneousCpuPercentage: 0
     }
   };
 
@@ -101,6 +107,11 @@ function parseRedisInfo(info: string) {
         case 'used_cpu_sys':
           metrics.usedCpuSys = parseFloat(value) || 0;
           metrics.cpuUtilization = parseFloat(value) || 0;
+          metrics.cpuUsage.usedCpuSys = parseFloat(value) || 0;
+          break;
+        case 'used_cpu_user':
+          metrics.usedCpuUser = parseFloat(value) || 0;
+          metrics.cpuUsage.usedCpuUser = parseFloat(value) || 0;
           break;
         case 'uptime_in_seconds':
           metrics.uptimeInSeconds = parseInt(value) || 0;
@@ -200,9 +211,32 @@ function parseRedisInfo(info: string) {
   const totalAccesses = metrics.cacheHits + metrics.cacheMisses;
   metrics.hitRatio = totalAccesses > 0 ? metrics.cacheHits / totalAccesses : 0;
   metrics.overallHitRatio = metrics.hitRatio;
-  metrics.avgResponseTime = metrics.avgResponseTime || 5.0;
+
+  // Calculate memory utilization percentage
+  if (metrics.memoryUsage.total > 0) {
+    metrics.memoryUsage.utilizationPercentage = (metrics.memoryUsage.used / metrics.memoryUsage.total) * 100;
+  }
+
+  // Calculate instantaneous CPU percentage (simplified for demo)
+  // In a real implementation, you'd need to store previous values and calculate delta
+  metrics.cpuUsage.instantaneousCpuPercentage = ((metrics.cpuUsage.usedCpuSys + metrics.cpuUsage.usedCpuUser) / metrics.uptimeInSeconds) * 100;
 
   return metrics;
+}
+
+async function measureLatency(redis: any) {
+  const measurements = [];
+  const numMeasurements = 10;
+  
+  for (let i = 0; i < numMeasurements; i++) {
+    const start = performance.now();
+    await redis.ping();
+    const end = performance.now();
+    measurements.push(end - start);
+  }
+  
+  // Return average latency in milliseconds
+  return measurements.reduce((sum, val) => sum + val, 0) / measurements.length;
 }
 
 serve(async (req) => {
@@ -235,6 +269,9 @@ serve(async (req) => {
       )
     ]);
 
+    // Measure response time/latency
+    const avgLatency = await measureLatency(redis);
+
     // Get Redis INFO with all sections
     const info = await redis.info('all');
     
@@ -263,8 +300,10 @@ serve(async (req) => {
     const metrics = parseRedisInfo(info);
     metrics.dbSize = dbSize;
     metrics.slowlog = slowlog;
+    metrics.avgResponseTime = avgLatency;
     
     console.log(`Parsed ${slowlog.length} slowlog entries`);
+    console.log(`Average latency: ${avgLatency.toFixed(2)}ms`);
     
     // Close Redis connection
     await redis.close();
