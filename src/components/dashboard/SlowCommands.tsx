@@ -23,6 +23,13 @@ const SlowCommands = ({ metrics }: SlowCommandsProps) => {
     return new Date(timestamp * 1000).toLocaleString();
   };
 
+  const formatCommand = (command: string[] | string) => {
+    if (Array.isArray(command)) {
+      return command.join(' ');
+    }
+    return String(command);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
       <div className="flex items-center gap-3 mb-6">
@@ -35,10 +42,10 @@ const SlowCommands = ({ metrics }: SlowCommandsProps) => {
         </div>
       </div>
 
-      {slowlog.length > 0 ? (
+      {slowlog && slowlog.length > 0 ? (
         <div className="space-y-3">
           {slowlog.map((entry, index) => (
-            <div key={index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <div key={entry.id || index} className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
               <div className="flex justify-between items-start mb-2">
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Command #{entry.id}
@@ -47,8 +54,8 @@ const SlowCommands = ({ metrics }: SlowCommandsProps) => {
                   {formatDuration(entry.duration)}
                 </div>
               </div>
-              <div className="text-sm text-gray-700 dark:text-gray-300 mb-2 font-mono bg-gray-100 dark:bg-gray-600 p-2 rounded">
-                {Array.isArray(entry.command) ? entry.command.join(' ') : entry.command}
+              <div className="text-sm text-gray-700 dark:text-gray-300 mb-2 font-mono bg-gray-100 dark:bg-gray-600 p-2 rounded break-all">
+                {formatCommand(entry.command)}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 {formatTimestamp(entry.timestamp)}
@@ -63,6 +70,7 @@ const SlowCommands = ({ metrics }: SlowCommandsProps) => {
           <div className="text-center">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>No slow commands recorded</p>
+            <p className="text-xs mt-1">Commands taking longer than slowlog-log-slower-than threshold</p>
           </div>
         </div>
       )}

@@ -12,8 +12,8 @@ export interface SlowlogEntry {
   timestamp: number;
   duration: number;
   command: string[];
-  clientIp?: string;
-  clientName?: string;
+  clientIp?: string | null;
+  clientName?: string | null;
 }
 
 export interface RedisPerformanceMetrics {
@@ -51,6 +51,7 @@ export interface RedisPerformanceMetrics {
   };
   persistence?: {
     rdbLastSaveTime: number;
+    rdbChangesSinceLastSave: number;
     rdbChangesSinceLastSave: number;
     aofCurrentSize: number;
     aofBaseSize: number;

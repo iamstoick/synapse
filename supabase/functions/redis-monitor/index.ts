@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { connect } from "https://deno.land/x/redis@v0.29.0/mod.ts"
 
@@ -240,13 +241,30 @@ serve(async (req) => {
     // Get DBSIZE
     const dbSize = await redis.dbsize();
     
-    // Get SLOWLOG
-    const slowlog = await redis.slowlog('get', 10);
+    // Get SLOWLOG - this returns an array of arrays
+    const slowlogResult = await redis.slowlog('get', 10);
+    
+    // Transform slowlog data into proper format
+    const slowlog = Array.isArray(slowlogResult) ? slowlogResult.map((entry: any[]) => {
+      if (Array.isArray(entry) && entry.length >= 4) {
+        return {
+          id: entry[0],
+          timestamp: entry[1],
+          duration: entry[2], // in microseconds
+          command: Array.isArray(entry[3]) ? entry[3] : [entry[3]],
+          clientIp: entry[4] || null,
+          clientName: entry[5] || null
+        };
+      }
+      return null;
+    }).filter(Boolean) : [];
     
     // Parse metrics from INFO command
     const metrics = parseRedisInfo(info);
     metrics.dbSize = dbSize;
     metrics.slowlog = slowlog;
+    
+    console.log(`Parsed ${slowlog.length} slowlog entries`);
     
     // Close Redis connection
     await redis.close();
