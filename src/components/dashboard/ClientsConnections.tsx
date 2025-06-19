@@ -1,3 +1,4 @@
+
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Users, UserPlus, UserX } from "lucide-react";
 import MetricCard from "./MetricCard";
@@ -9,7 +10,7 @@ interface ClientsConnectionsProps {
 
 const ClientsConnections = ({ metrics }: ClientsConnectionsProps) => {
   const clients = metrics.clients || {
-    connectedClients: 0,
+    connectedClients: metrics.connectedClients || 0,
     totalConnectionsReceived: 0,
     rejectedConnections: 0,
     maxClients: 0

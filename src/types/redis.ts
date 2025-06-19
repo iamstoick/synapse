@@ -164,8 +164,8 @@ export interface RedisInfo {
   active_defrag_last_scan_fields_freelist_rebuild_time_count?: number;
   active_defrag_last_scan_fields_oom_count_count?: number;
   active_defrag_last_scan_fields_key_count_count_count?: number;
-  active_defrag_last_scan_fields_keys_skipped_count_count?: number;
-  active_defrag_last_scan_fields_work_done_count_count?: number;
+  active_defrag_last_scan_fields_keys_skipped_count_count_count?: number;
+  active_defrag_last_scan_fields_work_done_count_count_count?: number;
   active_defrag_last_scan_fields_freelist_compaction_count_count_count?: number;
   active_defrag_last_scan_fields_freelist_compaction_time_count_count?: number;
   active_defrag_last_scan_fields_freelist_rebuild_count_count_count?: number;
@@ -204,6 +204,13 @@ export interface OperationsMetrics {
   deletes: number;
 }
 
+export interface CacheLevel {
+  level: number;
+  hits: number;
+  misses: number;
+  hitRatio: number;
+}
+
 export interface CacheLevels {
   l1_hit_ratio?: number;
   l2_hit_ratio?: number;
@@ -213,6 +220,8 @@ export interface CacheLevels {
 export interface MemoryAnalysisMetrics {
   fragmentationRatio: number;
   memoryWasted: number;
+  evictedKeys: number;
+  expiredKeys: number;
 }
 
 export interface PersistenceMetrics {
@@ -225,6 +234,38 @@ export interface PersistenceMetrics {
   currentCowSize?: number;
   currentForkPerc?: number;
   rdbLastCowSize?: number;
+  rdbBgsaveInProgress?: number;
+}
+
+export interface ClientsMetrics {
+  connectedClients: number;
+  totalConnectionsReceived: number;
+  rejectedConnections: number;
+  maxClients: number;
+}
+
+export interface CpuUsageMetrics {
+  usedCpuSys: number;
+  usedCpuUser: number;
+  instantaneousCpuPercentage: number;
+}
+
+export interface SlowlogEntry {
+  id: number;
+  timestamp: number;
+  duration: number;
+  command: string[];
+  clientIp: string;
+  clientName?: string;
+}
+
+export interface TimeSeriesData {
+  time: string;
+  level1: number;
+  level2: number;
+  level3: number;
+  level4: number;
+  overall: number;
 }
 
 export interface RedisPerformanceMetrics {
@@ -243,6 +284,11 @@ export interface RedisPerformanceMetrics {
   overallHitRatio: number;
   memoryAnalysis?: MemoryAnalysisMetrics;
   persistence?: PersistenceMetrics;
+  clients?: ClientsMetrics;
+  cpuUsage?: CpuUsageMetrics;
+  slowlog?: SlowlogEntry[];
+  dbSize?: number;
+  timestamp?: number;
 }
 
 export interface RedisConnection {

@@ -1,3 +1,4 @@
+
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Database, Trash2, AlertTriangle } from "lucide-react";
 import MetricCard from "./MetricCard";
@@ -10,6 +11,7 @@ interface MemoryAnalysisProps {
 const MemoryAnalysis = ({ metrics }: MemoryAnalysisProps) => {
   const memoryAnalysis = metrics.memoryAnalysis || {
     fragmentationRatio: 0,
+    memoryWasted: 0,
     evictedKeys: 0,
     expiredKeys: 0
   };
@@ -52,10 +54,10 @@ const MemoryAnalysis = ({ metrics }: MemoryAnalysisProps) => {
             <TooltipContent className="max-w-md">
               <div className="space-y-2">
                 <p className="font-medium">Memory Fragmentation Analysis:</p>
-                <p><strong>Ratio ≈ 1.0:</strong> Ideal. Redis is using memory very efficiently with little fragmentation (1.01-1.05 is healthy).</p>
-                <p><strong>Ratio 1.2-1.5:</strong> Moderate fragmentation. Redis consumes more physical memory than allocated.</p>
-                <p><strong>Ratio &gt; 1.5:</strong> Excessive fragmentation. Large portion of RAM is wasted, leading to premature OOM errors and slower performance.</p>
-                <p><strong>Ratio &lt; 1.0:</strong> Critical state. Redis is using swap memory, severely impacting performance.</p>
+                <p><strong>Ratio ≈ 1.0:</strong> This is ideal. It means Redis is using its allocated memory very efficiently, and there's little fragmentation. A ratio slightly above 1.0 (e.g., 1.01-1.05) is usually healthy due to some unavoidable OS overheads.</p>
+                <p><strong>Ratio &gt; 1.0 (e.g., 1.2 to 1.5):</strong> Indicates moderate fragmentation. Redis is consuming more physical memory than it "thinks" it's using. While not immediately critical, it's a sign that fragmentation is occurring.</p>
+                <p><strong>Ratio &gt; 1.5 or significantly higher:</strong> This indicates excessive memory fragmentation. A large portion of your physical RAM is being wasted.</p>
+                <p><strong>Ratio &lt; 1.0:</strong> This is a critical state. It means Redis is trying to use more memory than the OS has allocated to it in RAM, and it has likely resorted to using swap memory. This will severely impact performance and can lead to instability. You need to allocate more RAM immediately or reduce Redis's memory footprint.</p>
               </div>
             </TooltipContent>
           </Tooltip>

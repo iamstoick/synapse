@@ -1,6 +1,6 @@
 
 import { RedisPerformanceMetrics } from "@/types/redis";
-import { Save, FileText, Timer, HardDrive, Percent, Clock } from "lucide-react";
+import { Save, FileText, Timer, HardDrive, Percent, Clock, Activity } from "lucide-react";
 import MetricCard from "./MetricCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -18,7 +18,8 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
     rdbLastBgsaveTimeSec: 0,
     currentCowSize: 0,
     currentForkPerc: 0,
-    rdbLastCowSize: 0
+    rdbLastCowSize: 0,
+    rdbBgsaveInProgress: 0
   };
 
   const formatTimestamp = (timestamp: number) => {
@@ -35,7 +36,7 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
   };
 
   const formatSeconds = (seconds: number) => {
-    if (seconds === 0) return 'N/A';
+    if (seconds === 0) return '0s';
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -52,6 +53,10 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
   const formatPercentage = (percent: number) => {
     if (percent === 0) return 'N/A';
     return `${percent.toFixed(1)}%`;
+  };
+
+  const formatBgsaveInProgress = (inProgress: number) => {
+    return inProgress === 1 ? 'Yes' : 'No';
   };
 
   return (
@@ -91,16 +96,16 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
             <TooltipTrigger asChild>
               <div>
                 <MetricCard
-                  title="AOF Size"
-                  value={formatBytes(persistence.aofCurrentSize)}
-                  icon={<FileText className="w-5 h-5" />}
-                  trend="neutral"
+                  title="Current Fork In Progress"
+                  value={formatBgsaveInProgress(persistence.rdbBgsaveInProgress || 0)}
+                  icon={<Activity className="w-5 h-5" />}
+                  trend={persistence.rdbBgsaveInProgress === 1 ? "up" : "neutral"}
                   className="border-l-4 border-l-green-500"
                 />
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Current size of the Append Only File (AOF). AOF logs every write operation and provides better durability than RDB. Large AOF files may need rewriting for optimization.</p>
+              <p>Indicates whether an RDB background save is currently in progress. When active, Redis is creating a snapshot of the data to disk.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

@@ -11,7 +11,7 @@ interface CpuUsageProps {
 
 const CpuUsage = ({ metrics }: CpuUsageProps) => {
   const cpuUsage = metrics.cpuUsage || {
-    usedCpuSys: 0,
+    usedCpuSys: metrics.cpuUtilization || 0,
     usedCpuUser: 0,
     instantaneousCpuPercentage: 0
   };
