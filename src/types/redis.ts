@@ -1,3 +1,4 @@
+
 export interface RedisInfo {
   redis_version: string;
   redis_mode: string;
@@ -97,98 +98,6 @@ export interface RedisInfo {
   aof_base_size_human?: string;
   used_memory_scripts_human?: string;
   used_memory_functions_human?: string;
-  active_defrag_hits?: number;
-  active_defrag_misses?: number;
-  active_defrag_key_hits?: number;
-  active_defrag_key_misses?: number;
-  active_defrag_running?: number;
-  active_defrag_time_elapsed?: number;
-  active_defrag_estimated_gain?: number;
-  active_defrag_fragmentation_wasted?: number;
-  active_defrag_cycle_fast?: number;
-  active_defrag_cycle_slow?: number;
-  active_defrag_last_effort?: number;
-  active_defrag_throttle_max_bytes?: number;
-  active_defrag_max_scan_fields?: number;
-  active_defrag_threshold_lower?: number;
-  active_defrag_running_time_ms?: number;
-  active_defrag_sync_time_ms?: number;
-  active_defrag_aborted?: number;
-  active_defrag_oom_count?: number;
-  active_defrag_key_count?: number;
-  active_defrag_keys_skipped?: number;
-  active_defrag_work_done?: number;
-  active_defrag_scan_time?: number;
-  active_defrag_freelist_compaction_count?: number;
-  active_defrag_freelist_compaction_time?: number;
-  active_defrag_freelist_rebuild_count?: number;
-  active_defrag_freelist_rebuild_time?: number;
-  active_defrag_last_scan_time?: number;
-  active_defrag_last_work_done?: number;
-  active_defrag_last_keys_skipped?: number;
-  active_defrag_last_freelist_compaction_count?: number;
-  active_defrag_last_freelist_compaction_time?: number;
-  active_defrag_last_freelist_rebuild_count?: number;
-  active_defrag_last_freelist_rebuild_time?: number;
-  active_defrag_last_oom_count?: number;
-  active_defrag_last_key_count?: number;
-  active_defrag_last_aborted?: number;
-  active_defrag_last_estimated_gain?: number;
-  active_defrag_last_fragmentation_wasted?: number;
-  active_defrag_last_cycle_fast?: number;
-  active_defrag_last_cycle_slow?: number;
-  active_defrag_last_throttle_max_bytes?: number;
-  active_defrag_last_max_scan_fields?: number;
-  active_defrag_last_threshold_lower?: number;
-  active_defrag_last_running_time_ms?: number;
-  active_defrag_last_sync_time_ms?: number;
-  active_defrag_last_scan_fields?: number;
-  active_defrag_last_scan_fields_count?: number;
-  active_defrag_last_scan_fields_time?: number;
-  active_defrag_last_scan_fields_aborted?: number;
-  active_defrag_last_scan_fields_oom?: number;
-  active_defrag_last_scan_fields_key_count?: number;
-  active_defrag_last_scan_fields_keys_skipped?: number;
-  active_defrag_last_scan_fields_work_done?: number;
-  active_defrag_last_scan_fields_freelist_compaction_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_time?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_time?: number;
-  active_defrag_last_scan_fields_oom_count?: number;
-  active_defrag_last_scan_fields_key_count_count?: number;
-  active_defrag_last_scan_fields_keys_skipped_count?: number;
-  active_defrag_last_scan_fields_work_done_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_time_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_time_count?: number;
-  active_defrag_last_scan_fields_oom_count_count?: number;
-  active_defrag_last_scan_fields_key_count_count_count?: number;
-  active_defrag_last_scan_fields_keys_skipped_count_count_count?: number;
-  active_defrag_last_scan_fields_work_done_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_time_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_time_count_count?: number;
-  active_defrag_last_scan_fields_oom_count_count_count?: number;
-  active_defrag_last_scan_fields_key_count_count_count_count?: number;
-  active_defrag_last_scan_fields_keys_skipped_count_count_count_count?: number;
-  active_defrag_last_scan_fields_work_done_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_time_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_time_count_count_count_count?: number;
-  active_defrag_last_scan_fields_oom_count_count_count_count?: number;
-  active_defrag_last_scan_fields_key_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_keys_skipped_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_work_done_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_compaction_time_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_freelist_rebuild_time_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_oom_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_key_count_count_count_count_count_count?: number;
-  active_defrag_last_scan_fields_keys_skipped_count_count_count_count_count_count?: number;
   total_forks?: number;
 }
 
@@ -210,6 +119,8 @@ export interface CacheLevel {
   hits: number;
   misses: number;
   hitRatio: number;
+  totalRequests: number;
+  avgResponseTime: number;
 }
 
 export interface CacheLevels {
@@ -279,10 +190,11 @@ export interface RedisPerformanceMetrics {
   keyspaceHits: number;
   keyspaceMisses: number;
   totalCommands: number;
+  totalRequests: number;
   instantaneousOpsPerSec?: number;
   avgResponseTime: number;
   operations: OperationsMetrics;
-  cacheLevels?: CacheLevels;
+  cacheLevels?: CacheLevel[];
   overallHitRatio: number;
   memoryAnalysis?: MemoryAnalysisMetrics;
   persistence?: PersistenceMetrics;
@@ -297,4 +209,5 @@ export interface RedisConnection {
   id?: string;
   connectionString: string;
   isConnected?: boolean;
+  lastConnected?: Date;
 }

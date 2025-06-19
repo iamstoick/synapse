@@ -1,4 +1,3 @@
-
 import { CacheLevel, RedisPerformanceMetrics, TimeSeriesData } from "@/types/redis";
 
 // Generate a random number between min and max
@@ -35,6 +34,7 @@ export const generateMockRedisMetrics = (): RedisPerformanceMetrics => {
     timestamp: Date.now(),
     cacheLevels,
     overallHitRatio: parseFloat((totalHits / totalRequests).toFixed(2)),
+    totalCommands: totalRequests,
     totalRequests,
     avgResponseTime: parseFloat((cacheLevels.reduce((sum, level) => sum + level.avgResponseTime, 0) / cacheLevels.length).toFixed(2)),
     memoryUsage: {
@@ -47,7 +47,12 @@ export const generateMockRedisMetrics = (): RedisPerformanceMetrics => {
       writes: Math.floor(getRandomNumber(1000, 5000)),
       deletes: Math.floor(getRandomNumber(100, 1000))
     },
-    cpuUtilization: getRandomNumber(10, 80) // Added CPU utilization metric
+    cpuUtilization: getRandomNumber(10, 80),
+    redisVersion: '7.0',
+    uptimeInSeconds: Math.floor(getRandomNumber(86400, 2592000)),
+    connectedClients: Math.floor(getRandomNumber(1, 100)),
+    keyspaceHits: Math.floor(getRandomNumber(10000, 50000)),
+    keyspaceMisses: Math.floor(getRandomNumber(1000, 5000))
   };
 };
 

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { RedisPerformanceMetrics } from '@/types/redis';
@@ -41,6 +40,7 @@ export const useRealtimeMetrics = ({ connectionId, enabled }: UseRealtimeMetrics
             timestamp: new Date(newMetrics.timestamp).getTime(),
             cacheLevels: newMetrics.cache_levels || [],
             overallHitRatio: newMetrics.hit_ratio || 0,
+            totalCommands: newMetrics.total_commands_processed || 0,
             totalRequests: newMetrics.total_commands_processed || 0,
             avgResponseTime: newMetrics.avg_response_time || 0,
             memoryUsage: {
@@ -53,12 +53,9 @@ export const useRealtimeMetrics = ({ connectionId, enabled }: UseRealtimeMetrics
             dbSize: newMetrics.cache_hits + newMetrics.cache_misses,
             keyspaceHits: newMetrics.cache_hits,
             keyspaceMisses: newMetrics.cache_misses,
-            usedCpuSys: newMetrics.cpu_utilization,
-            usedMemoryHuman: `${Math.round((newMetrics.memory_used_bytes || 0) / (1024 * 1024))}M`,
-            usedMemoryPeakHuman: `${Math.round((newMetrics.memory_peak_bytes || 0) / (1024 * 1024))}M`,
-            memFragmentationRatio: 1.0,
-            uptimeInDays: Math.floor((newMetrics.uptime_in_seconds || 0) / (24 * 60 * 60)),
+            redisVersion: '7.0',
             uptimeInSeconds: newMetrics.uptime_in_seconds || 0,
+            connectedClients: 1,
             instantaneousOpsPerSec: newMetrics.instantaneous_ops_per_sec || 0
           };
 
