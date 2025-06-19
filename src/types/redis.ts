@@ -189,6 +189,7 @@ export interface RedisInfo {
   active_defrag_last_scan_fields_oom_count_count_count_count_count?: number;
   active_defrag_last_scan_fields_key_count_count_count_count_count_count?: number;
   active_defrag_last_scan_fields_keys_skipped_count_count_count_count_count_count?: number;
+  total_forks?: number;
 }
 
 export interface MemoryMetrics {
@@ -235,6 +236,7 @@ export interface PersistenceMetrics {
   currentForkPerc?: number;
   rdbLastCowSize?: number;
   rdbBgsaveInProgress?: number;
+  totalForks?: number;
 }
 
 export interface ClientsMetrics {
@@ -276,7 +278,7 @@ export interface RedisPerformanceMetrics {
   cpuUtilization: number;
   keyspaceHits: number;
   keyspaceMisses: number;
-  totalRequests: number;
+  totalCommands: number;
   instantaneousOpsPerSec?: number;
   avgResponseTime: number;
   operations: OperationsMetrics;

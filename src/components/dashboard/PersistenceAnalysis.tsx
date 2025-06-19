@@ -1,6 +1,6 @@
 
 import { RedisPerformanceMetrics } from "@/types/redis";
-import { Save, FileText, Timer, HardDrive, Percent, Clock, Activity } from "lucide-react";
+import { Save, FileText, Timer, HardDrive, Percent, Clock, Activity, GitFork } from "lucide-react";
 import MetricCard from "./MetricCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -19,7 +19,8 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
     currentCowSize: 0,
     currentForkPerc: 0,
     rdbLastCowSize: 0,
-    rdbBgsaveInProgress: 0
+    rdbBgsaveInProgress: 0,
+    totalForks: 0
   };
 
   const formatTimestamp = (timestamp: number) => {
@@ -109,6 +110,25 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Total Forks"
+                  value={persistence.totalForks?.toLocaleString() || '0'}
+                  icon={<GitFork className="w-5 h-5" />}
+                  trend="neutral"
+                  className="border-l-4 border-l-yellow-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total number of fork operations performed since Redis startup. This includes all background saves and AOF rewrites.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
         <TooltipProvider>
           <Tooltip>
@@ -116,15 +136,15 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
               <div>
                 <MetricCard
                   title="Last Fork Time"
-                  value={formatSeconds(persistence.rdbLastBgsaveTimeSec || 0)}
+                  value={formatMicroseconds(persistence.lastForkUsec || 0)}
                   icon={<Clock className="w-5 h-5" />}
-                  trend={persistence.rdbLastBgsaveTimeSec && persistence.rdbLastBgsaveTimeSec > 60 ? "up" : "neutral"}
+                  trend={persistence.lastForkUsec && persistence.lastForkUsec > 100000 ? "up" : "neutral"}
                   className="border-l-4 border-l-orange-500"
                 />
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Time taken for the last background RDB save operation. High values indicate potential performance issues during background saves.</p>
+              <p>Time taken for the last fork operation in microseconds. This includes the time needed to create a child process for background saving.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -212,6 +232,10 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
         <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Fork Status</h3>
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex justify-between">
+              <span>Total Forks:</span>
+              <span>{persistence.totalForks?.toLocaleString() || '0'}</span>
+            </div>
             <div className="flex justify-between">
               <span>Current Fork Progress:</span>
               <span>{formatPercentage(persistence.currentForkPerc || 0)}</span>

@@ -55,7 +55,13 @@ function parseRedisInfo(info: string) {
       rdbChangesSinceLastSave: 0,
       aofCurrentSize: 0,
       aofBaseSize: 0,
-      lastForkUsec: 0
+      lastForkUsec: 0,
+      rdbLastBgsaveTimeSec: 0,
+      currentCowSize: 0,
+      currentForkPerc: 0,
+      rdbLastCowSize: 0,
+      rdbBgsaveInProgress: 0,
+      totalForks: 0
     },
     clients: {
       connectedClients: 0,
@@ -154,6 +160,24 @@ function parseRedisInfo(info: string) {
           break;
         case 'latest_fork_usec':
           metrics.persistence.lastForkUsec = parseInt(value) || 0;
+          break;
+        case 'rdb_last_bgsave_time_sec':
+          metrics.persistence.rdbLastBgsaveTimeSec = parseInt(value) || 0;
+          break;
+        case 'current_cow_size':
+          metrics.persistence.currentCowSize = parseInt(value) || 0;
+          break;
+        case 'current_fork_perc':
+          metrics.persistence.currentForkPerc = parseFloat(value) || 0;
+          break;
+        case 'rdb_last_cow_size':
+          metrics.persistence.rdbLastCowSize = parseInt(value) || 0;
+          break;
+        case 'rdb_bgsave_in_progress':
+          metrics.persistence.rdbBgsaveInProgress = parseInt(value) || 0;
+          break;
+        case 'total_forks':
+          metrics.persistence.totalForks = parseInt(value) || 0;
           break;
         
         // Client metrics
