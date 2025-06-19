@@ -1,12 +1,14 @@
 
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { 
-  PieChart, 
-  Pie, 
-  Cell, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
   ResponsiveContainer,
-  Legend,
-  Tooltip
+  LabelList
 } from "recharts";
 
 interface OperationsChartProps {
@@ -18,67 +20,80 @@ const OperationsChart = ({ metrics }: OperationsChartProps) => {
   
   // Format data for the chart
   const data = [
-    { name: "Reads", value: operations.reads, color: "#3B82F6" },
-    { name: "Writes", value: operations.writes, color: "#10B981" },
-    { name: "Deletes", value: operations.deletes, color: "#F59E0B" }
+    { name: "Reads", value: operations.reads, fill: "#3B82F6" },
+    { name: "Writes", value: operations.writes, fill: "#10B981" },
+    { name: "Deletes", value: operations.deletes, fill: "#F59E0B" }
   ];
   
   const total = operations.reads + operations.writes + operations.deletes;
   
-  const COLORS = ["#3B82F6", "#10B981", "#F59E0B"];
-  
-  const RADIAN = Math.PI / 180;
-  const renderCustomizedLabel = ({ 
-    cx, 
-    cy, 
-    midAngle, 
-    innerRadius, 
-    outerRadius, 
-    percent 
-  }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
-    return percent > 0.05 ? (
-      <text 
-        x={x} 
-        y={y} 
-        fill="white" 
-        textAnchor="middle" 
-        dominantBaseline="central"
-      >
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    ) : null;
+  const formatNumber = (value: number) => {
+    return value.toLocaleString();
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{`${label}: ${data.value.toLocaleString()}`}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Percentage: {total > 0 ? ((data.value / total) * 100).toFixed(1) : 0}%
+          </p>
+        </div>
+      );
+    }
+    return null;
   };
   
   return (
-    <div className="bg-card p-4 rounded-lg shadow-sm h-[300px]">
-      <h2 className="text-lg font-semibold mb-2">Operations Distribution</h2>
-      <div className="text-sm text-gray-500 mb-2">
-        Total: {total.toLocaleString()} ops
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 h-[400px]">
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Operations Distribution</h2>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Total Operations: {total.toLocaleString()}
+        </div>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            labelLine={false}
-            label={renderCustomizedLabel}
-            outerRadius={80}
-            fill="#8884d8"
-            dataKey="value"
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Legend />
-          <Tooltip formatter={(value) => [value.toLocaleString(), 'Operations']} />
-        </PieChart>
-      </ResponsiveContainer>
+      {total > 0 ? (
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart 
+              data={data} 
+              layout="vertical"
+              margin={{ top: 20, right: 60, left: 60, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" opacity={0.3} />
+              <XAxis 
+                type="number" 
+                tickFormatter={formatNumber}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis 
+                type="category" 
+                dataKey="name" 
+                width={80}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                <LabelList 
+                  dataKey="value" 
+                  position="right" 
+                  formatter={formatNumber}
+                  style={{ fontSize: '12px', fill: '#374151' }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
+          <div className="text-center">
+            <div className="text-4xl mb-2">📊</div>
+            <p>No operations data available</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

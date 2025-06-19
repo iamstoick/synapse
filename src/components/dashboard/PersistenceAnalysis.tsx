@@ -1,5 +1,6 @@
+
 import { RedisPerformanceMetrics } from "@/types/redis";
-import { Save, FileText, Timer } from "lucide-react";
+import { Save, FileText, Timer, HardDrive, Percent, Clock } from "lucide-react";
 import MetricCard from "./MetricCard";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -13,7 +14,11 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
     rdbChangesSinceLastSave: 0,
     aofCurrentSize: 0,
     aofBaseSize: 0,
-    lastForkUsec: 0
+    lastForkUsec: 0,
+    rdbLastBgsaveTimeSec: 0,
+    currentCowSize: 0,
+    currentForkPerc: 0,
+    rdbLastCowSize: 0
   };
 
   const formatTimestamp = (timestamp: number) => {
@@ -29,11 +34,24 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const formatSeconds = (seconds: number) => {
+    if (seconds === 0) return 'N/A';
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
   const formatMicroseconds = (usec: number) => {
     if (usec === 0) return 'N/A';
     if (usec < 1000) return `${usec}μs`;
     if (usec < 1000000) return `${(usec / 1000).toFixed(1)}ms`;
     return `${(usec / 1000000).toFixed(2)}s`;
+  };
+
+  const formatPercentage = (percent: number) => {
+    if (percent === 0) return 'N/A';
+    return `${percent.toFixed(1)}%`;
   };
 
   return (
@@ -48,7 +66,7 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -93,15 +111,72 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
               <div>
                 <MetricCard
                   title="Last Fork Time"
-                  value={formatMicroseconds(persistence.lastForkUsec)}
-                  icon={<Timer className="w-5 h-5" />}
-                  trend={persistence.lastForkUsec > 1000000 ? "up" : "neutral"}
+                  value={formatSeconds(persistence.rdbLastBgsaveTimeSec || 0)}
+                  icon={<Clock className="w-5 h-5" />}
+                  trend={persistence.rdbLastBgsaveTimeSec && persistence.rdbLastBgsaveTimeSec > 60 ? "up" : "neutral"}
                   className="border-l-4 border-l-orange-500"
                 />
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Time taken for the last fork operation during RDB save or AOF rewrite. High values indicate potential performance issues during background saves.</p>
+              <p>Time taken for the last background RDB save operation. High values indicate potential performance issues during background saves.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Current Fork Memory Usage"
+                  value={formatBytes(persistence.currentCowSize || 0)}
+                  icon={<HardDrive className="w-5 h-5" />}
+                  trend="neutral"
+                  className="border-l-4 border-l-purple-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Current Copy-on-Write memory usage during the ongoing RDB save. This represents how much extra memory Redis is using right now for the fork.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Current Fork Percentage"
+                  value={formatPercentage(persistence.currentForkPerc || 0)}
+                  icon={<Percent className="w-5 h-5" />}
+                  trend="neutral"
+                  className="border-l-4 border-l-indigo-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Percentage of the fork process completed.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <MetricCard
+                  title="Last Fork Memory Usage"
+                  value={formatBytes(persistence.rdbLastCowSize || 0)}
+                  icon={<Timer className="w-5 h-5" />}
+                  trend="neutral"
+                  className="border-l-4 border-l-cyan-500"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy-on-Write memory used during the last completed RDB save.</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -122,25 +197,28 @@ const PersistenceAnalysis = ({ metrics }: PersistenceAnalysisProps) => {
                 {persistence.rdbChangesSinceLastSave.toLocaleString()}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span>Last Save Duration:</span>
+              <span>{formatSeconds(persistence.rdbLastBgsaveTimeSec || 0)}</span>
+            </div>
           </div>
         </div>
 
         <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">AOF Status</h3>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Fork Status</h3>
           <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <div className="flex justify-between">
-              <span>Current Size:</span>
-              <span>{formatBytes(persistence.aofCurrentSize)}</span>
+              <span>Current Fork Progress:</span>
+              <span>{formatPercentage(persistence.currentForkPerc || 0)}</span>
             </div>
             <div className="flex justify-between">
-              <span>Base Size:</span>
-              <span>{formatBytes(persistence.aofBaseSize)}</span>
+              <span>Current COW Memory:</span>
+              <span>{formatBytes(persistence.currentCowSize || 0)}</span>
             </div>
-            {persistence.aofCurrentSize > persistence.aofBaseSize * 2 && (
-              <div className="text-orange-600 dark:text-orange-400 text-xs mt-2">
-                ⚠ AOF file is growing large - consider rewriting
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span>Last Fork COW Memory:</span>
+              <span>{formatBytes(persistence.rdbLastCowSize || 0)}</span>
+            </div>
           </div>
         </div>
       </div>
