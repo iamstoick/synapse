@@ -53,23 +53,50 @@ const RedisConnectionForm = ({
         throw new Error(data.error || 'Failed to connect to Redis server');
       }
 
-      console.log("Connection successful, saving to database...");
+      console.log("Connection successful, checking for existing connection...");
 
-      // Save the connection to the database
-      const { data: connectionData, error: dbError } = await supabase
+      // Check if this connection string already exists
+      const { data: existingConnections, error: checkError } = await supabase
         .from('redis_connections')
-        .insert({
-          connection_string: input,
-          server_name: serverName.trim() || null,
-          is_active: true
-        })
         .select('id')
-        .single();
+        .eq('connection_string', input);
 
-      if (dbError) {
-        console.error('Database error:', dbError);
-        throw new Error('Failed to save connection details');
+      if (checkError) throw checkError;
+
+      let connectionData;
+      
+      if (existingConnections && existingConnections.length > 0) {
+        // Update existing connection's last connected time and server name
+        const { data: updatedData, error: updateError } = await supabase
+          .from('redis_connections')
+          .update({ 
+            last_connected_at: new Date().toISOString(),
+            server_name: serverName.trim() || null
+          })
+          .eq('id', existingConnections[0].id)
+          .select('id')
+          .single();
+
+        if (updateError) throw updateError;
+        connectionData = updatedData;
+        console.log("Updated existing connection");
+      } else {
+        // Create new connection
+        const { data: newData, error: insertError } = await supabase
+          .from('redis_connections')
+          .insert({
+            connection_string: input,
+            server_name: serverName.trim() || null,
+            is_active: true
+          })
+          .select('id')
+          .single();
+
+        if (insertError) throw insertError;
+        connectionData = newData;
+        console.log("Created new connection");
       }
+
 
       if (!connectionData?.id) {
         throw new Error('Failed to get connection ID');
