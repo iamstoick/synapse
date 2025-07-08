@@ -208,6 +208,7 @@ export interface RedisPerformanceMetrics {
 export interface RedisConnection {
   id?: string;
   connectionString: string;
+  serverName?: string;
   isConnected?: boolean;
   lastConnected?: Date;
 }

@@ -7,6 +7,7 @@ import KeyspaceChart from "@/components/dashboard/KeyspaceChart";
 import Navbar from "@/components/dashboard/Navbar";
 import InfoPanel from "@/components/dashboard/InfoPanel";
 import RedisConnectionForm from "@/components/dashboard/RedisConnectionForm";
+import RedisConnectionsList from "@/components/dashboard/RedisConnectionsList";
 import RealtimeIndicator from "@/components/dashboard/RealtimeIndicator";
 import MetricsStream from "@/components/dashboard/MetricsStream";
 import SlowCommands from "@/components/dashboard/SlowCommands";
@@ -126,6 +127,11 @@ const Index = () => {
           connectionString={connection?.connectionString}
         />
 
+        <RedisConnectionsList
+          onConnect={handleConnect}
+          currentConnectionId={connection?.id}
+        />
+
         {connection && (
           <div className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -161,7 +167,7 @@ const Index = () => {
               <div className="space-y-8">
                 <MemoryUsage metrics={currentMetrics} />
                 <MemoryAnalysis metrics={currentMetrics} />
-                <InfoPanel metrics={currentMetrics} />
+                <InfoPanel metrics={currentMetrics} connectionId={connection?.id} />
               </div>
               <div className="space-y-8">
                 <OperationsChart metrics={currentMetrics} />

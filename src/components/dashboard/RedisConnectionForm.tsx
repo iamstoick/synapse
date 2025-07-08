@@ -21,6 +21,7 @@ const RedisConnectionForm = ({
   connectionString
 }: RedisConnectionFormProps) => {
   const [input, setInput] = useState(connectionString || "");
+  const [serverName, setServerName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleConnect = async () => {
@@ -59,6 +60,7 @@ const RedisConnectionForm = ({
         .from('redis_connections')
         .insert({
           connection_string: input,
+          server_name: serverName.trim() || null,
           is_active: true
         })
         .select('id')
@@ -76,6 +78,7 @@ const RedisConnectionForm = ({
       const connection: RedisConnection = {
         id: connectionData.id,
         connectionString: input,
+        serverName: serverName.trim() || undefined,
         isConnected: true,
         lastConnected: new Date()
       };
@@ -101,27 +104,35 @@ const RedisConnectionForm = ({
         {!isConnected ? (
           <>
             <p className="text-sm text-muted-foreground">
-              Enter your Redis CLI connection string to analyze server performance
+              Enter your Redis CLI connection string and server name to analyze server performance
             </p>
-            <div className="flex flex-col md:flex-row gap-2">
+            <div className="space-y-3">
               <Input
-                placeholder="redis-cli -h localhost -p 6379 -a password"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1"
+                placeholder="Server name (e.g., Production Redis, Cache Server)"
+                value={serverName}
+                onChange={(e) => setServerName(e.target.value)}
+                className="w-full"
               />
-              <Button 
-                onClick={handleConnect} 
-                disabled={isSubmitting}
-                className="md:w-auto w-full"
-              >
-                {isSubmitting ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Play className="h-4 w-4 mr-2" />
-                )}
-                Connect
-              </Button>
+              <div className="flex flex-col md:flex-row gap-2">
+                <Input
+                  placeholder="redis-cli -h localhost -p 6379 -a password"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleConnect} 
+                  disabled={isSubmitting}
+                  className="md:w-auto w-full"
+                >
+                  {isSubmitting ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-2" />
+                  )}
+                  Connect
+                </Button>
+              </div>
             </div>
             <div className="text-xs text-muted-foreground">
               <p>Example: redis-cli -h 192.168.1.100 -p 6379 -a password</p>

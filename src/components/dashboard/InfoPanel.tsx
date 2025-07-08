@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { RedisPerformanceMetrics } from "@/types/redis";
 import { Info, Check, Clock, AlertCircle, TrendingUp, TrendingDown, Activity, Zap, Shield, Target } from "lucide-react";
+import UptimeHistoryDialog from "./UptimeHistoryDialog";
 
 interface InfoPanelProps {
   metrics: RedisPerformanceMetrics;
+  connectionId?: string;
 }
 
-const InfoPanel = ({ metrics }: InfoPanelProps) => {
+const InfoPanel = ({ metrics, connectionId }: InfoPanelProps) => {
+  const [showUptimeDialog, setShowUptimeDialog] = useState(false);
   // Enhanced health score calculation
   const calculateHealthScore = (ratio: number, responseTime: number, cpuSeconds: number, opsPerSec: number) => {
     // Hit ratio score (40% weight)
@@ -292,9 +296,15 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
             <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">CPU Usage</div>
             <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{(metrics.cpuUtilization || 0).toFixed(1)}s</div>
           </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Response Time</div>
-            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{metrics.avgResponseTime.toFixed(1)}ms</div>
+          <div 
+            className="text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-2 transition-colors"
+            onClick={() => setShowUptimeDialog(true)}
+            title="Click to view uptime history and reboot detection"
+          >
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Uptime</div>
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {Math.floor((metrics.uptimeInSeconds || 0) / (24 * 60 * 60))}d
+            </div>
           </div>
         </div>
       </div>
@@ -323,6 +333,12 @@ const InfoPanel = ({ metrics }: InfoPanelProps) => {
           ))}
         </div>
       </div>
+
+      <UptimeHistoryDialog
+        isOpen={showUptimeDialog}
+        onClose={() => setShowUptimeDialog(false)}
+        connectionId={connectionId}
+      />
     </div>
   );
 };
