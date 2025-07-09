@@ -58,7 +58,7 @@ const RedisConnectionForm = ({
       // Check if this connection string already exists
       const { data: existingConnections, error: checkError } = await supabase
         .from('redis_connections')
-        .select('id')
+        .select('id, server_name')
         .eq('connection_string', input);
 
       if (checkError) throw checkError;
@@ -66,20 +66,24 @@ const RedisConnectionForm = ({
       let connectionData;
       
       if (existingConnections && existingConnections.length > 0) {
+        // Preserve existing server name if no new name is provided
+        const existingServerName = existingConnections[0].server_name;
+        const finalServerName = serverName.trim() || existingServerName || null;
+        
         // Update existing connection's last connected time and server name
         const { data: updatedData, error: updateError } = await supabase
           .from('redis_connections')
           .update({ 
             last_connected_at: new Date().toISOString(),
-            server_name: serverName.trim() || null
+            server_name: finalServerName
           })
           .eq('id', existingConnections[0].id)
-          .select('id')
+          .select('id, server_name')
           .single();
 
         if (updateError) throw updateError;
         connectionData = updatedData;
-        console.log("Updated existing connection");
+        console.log("Updated existing connection, preserved server name:", finalServerName);
       } else {
         // Create new connection
         const { data: newData, error: insertError } = await supabase
@@ -105,7 +109,7 @@ const RedisConnectionForm = ({
       const connection: RedisConnection = {
         id: connectionData.id,
         connectionString: input,
-        serverName: serverName.trim() || undefined,
+        serverName: connectionData.server_name || serverName.trim() || undefined,
         isConnected: true,
         lastConnected: new Date()
       };

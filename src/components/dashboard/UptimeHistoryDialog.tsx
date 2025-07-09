@@ -138,6 +138,9 @@ const UptimeHistoryDialog = ({ isOpen, onClose, connectionId }: UptimeHistoryDia
                       {index < uptimeHistory.length - 1 && (
                         <span> (was {formatUptime(uptimeHistory[index + 1].uptime_seconds)})</span>
                       )}
+                      <div className="mt-1 text-xs">
+                        <strong>Estimated reboot time:</strong> {new Date(Date.now() - (record.uptime_seconds * 1000)).toLocaleString()}
+                      </div>
                     </div>
                   )}
                 </div>
