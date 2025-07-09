@@ -6,6 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Database, Play, X, Trash2, ChevronDown, ChevronRight, Edit2, Check, X as XIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface RedisConnectionsListProps {
   onConnect: (connection: RedisConnection) => void;
@@ -18,6 +29,9 @@ const RedisConnectionsList = ({ onConnect, currentConnectionId }: RedisConnectio
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [connectionToDelete, setConnectionToDelete] = useState<{ id: string; name?: string } | null>(null);
+  const { user } = useAuth();
 
   const fetchConnections = async () => {
     try {
@@ -67,20 +81,32 @@ const RedisConnectionsList = ({ onConnect, currentConnectionId }: RedisConnectio
     }
   };
 
-  const handleDelete = async (connectionId: string, serverName?: string) => {
+  const handleDeleteClick = (connectionId: string, serverName?: string) => {
+    setConnectionToDelete({ id: connectionId, name: serverName });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!connectionToDelete) return;
+
     try {
+      // Delete the connection - this will cascade delete all related data
       const { error } = await supabase
         .from('redis_connections')
         .delete()
-        .eq('id', connectionId);
+        .eq('id', connectionToDelete.id);
 
       if (error) throw error;
 
-      setConnections(prev => prev.filter(conn => conn.id !== connectionId));
-      toast.success(`Deleted connection to ${serverName || 'Redis server'}`);
+      setConnections(prev => prev.filter(conn => conn.id !== connectionToDelete.id));
+      
+      toast.success(`Deleted connection and historical data for ${connectionToDelete.name || 'Redis server'}`);
     } catch (error) {
       console.error('Error deleting connection:', error);
       toast.error('Failed to delete connection');
+    } finally {
+      setDeleteDialogOpen(false);
+      setConnectionToDelete(null);
     }
   };
 
@@ -250,7 +276,7 @@ const RedisConnectionsList = ({ onConnect, currentConnectionId }: RedisConnectio
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(connection.id!, connection.serverName)}
+                        onClick={() => handleDeleteClick(connection.id!, connection.serverName)}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -263,6 +289,25 @@ const RedisConnectionsList = ({ onConnect, currentConnectionId }: RedisConnectio
           </div>
         </CollapsibleContent>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Connection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {connectionToDelete?.name ? `"${connectionToDelete.name}"` : 'this connection'}? 
+              This will permanently remove the connection and <strong>all associated historical data</strong> including 
+              metrics, uptime history, and reboot logs. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete Connection & Data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Collapsible>
   );
 };

@@ -190,7 +190,7 @@ export type Database = {
           password: string | null
           port: number | null
           server_name: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           connection_string: string
@@ -203,7 +203,7 @@ export type Database = {
           password?: string | null
           port?: number | null
           server_name?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           connection_string?: string
@@ -216,7 +216,7 @@ export type Database = {
           password?: string | null
           port?: number | null
           server_name?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

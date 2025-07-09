@@ -6,6 +6,7 @@ import { RedisConnection } from "@/types/redis";
 import { toast } from "sonner";
 import { Database, Play, RefreshCw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RedisConnectionFormProps {
   onConnect: (connection: RedisConnection) => void;
@@ -23,6 +24,7 @@ const RedisConnectionForm = ({
   const [input, setInput] = useState(connectionString || "");
   const [serverName, setServerName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const handleConnect = async () => {
     if (!input.trim()) {
@@ -91,7 +93,8 @@ const RedisConnectionForm = ({
           .insert({
             connection_string: input,
             server_name: serverName.trim() || null,
-            is_active: true
+            is_active: true,
+            user_id: user?.id
           })
           .select('id')
           .single();
