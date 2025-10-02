@@ -275,10 +275,43 @@ serve(async (req) => {
       throw new Error("Connection string is required");
     }
 
-    const parts = connectionString.split(' ');
+    // Validate and sanitize connection string
+    if (typeof connectionString !== 'string') {
+      throw new Error("Connection string must be a string");
+    }
+
+    if (connectionString.length > 500) {
+      throw new Error("Connection string is too long");
+    }
+
+    if (!connectionString.startsWith('redis-cli')) {
+      throw new Error("Invalid connection string format");
+    }
+
+    // Sanitize: remove dangerous characters
+    const sanitized = connectionString.replace(/[;&|<>$`]/g, '');
+
+    const parts = sanitized.split(' ');
     const host = parts[parts.indexOf('-h') + 1] || 'localhost';
-    const port = parseInt(parts[parts.indexOf('-p') + 1]) || 6379;
+    const portStr = parts[parts.indexOf('-p') + 1];
+    const port = portStr ? parseInt(portStr) : 6379;
     const password = parts[parts.indexOf('-a') + 1] || undefined;
+
+    // Validate host - prevent SSRF
+    if (!host || host === '' || host.includes('..')) {
+      throw new Error("Invalid host");
+    }
+
+    // Validate port
+    if (isNaN(port) || port < 1 || port > 65535) {
+      throw new Error("Invalid port number");
+    }
+
+    // Prevent connections to internal services
+    const blockedHosts = ['127.0.0.1', 'localhost', '0.0.0.0', '169.254.169.254'];
+    if (blockedHosts.includes(host.toLowerCase())) {
+      throw new Error("Connection to internal hosts is not allowed");
+    }
 
     console.log(`Attempting to connect to Redis at ${host}:${port}`);
 
@@ -341,9 +374,15 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Redis connection error:', error);
+    
+    // Sanitize error messages to prevent information leakage
+    const sanitizedError = error instanceof Error 
+      ? error.message.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '[REDACTED]') // Remove IP addresses
+      : 'Connection failed';
+    
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message 
+      error: sanitizedError 
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

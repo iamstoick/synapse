@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Database, Play, RefreshCw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { redisConnectionSchema, sanitizeConnectionString, sanitizeServerName } from "@/lib/validation";
 
 interface RedisConnectionFormProps {
   onConnect: (connection: RedisConnection) => void;
@@ -27,13 +28,19 @@ const RedisConnectionForm = ({
   const { user } = useAuth();
 
   const handleConnect = async () => {
-    if (!input.trim()) {
-      toast.error("Please enter a Redis connection string");
-      return;
-    }
+    // Sanitize inputs
+    const sanitizedInput = sanitizeConnectionString(input);
+    const sanitizedServerName = sanitizeServerName(serverName);
 
-    if (!input.startsWith("redis-cli")) {
-      toast.error("Connection string must start with 'redis-cli'");
+    // Validate inputs using Zod schema
+    const validation = redisConnectionSchema.safeParse({
+      connectionString: sanitizedInput,
+      serverName: sanitizedServerName || undefined
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast.error(firstError.message);
       return;
     }
 
@@ -42,9 +49,9 @@ const RedisConnectionForm = ({
     try {
       console.log("Testing Redis connection...");
       
-      // Test the connection using our edge function
+      // Test the connection using our edge function with sanitized input
       const { data, error } = await supabase.functions.invoke('redis-monitor', {
-        body: { connectionString: input }
+        body: { connectionString: sanitizedInput }
       });
 
       console.log("Edge function response:", { data, error });
@@ -61,7 +68,7 @@ const RedisConnectionForm = ({
       const { data: existingConnections, error: checkError } = await supabase
         .from('redis_connections')
         .select('id, server_name')
-        .eq('connection_string', input);
+        .eq('connection_string', sanitizedInput);
 
       if (checkError) throw checkError;
 
@@ -70,7 +77,7 @@ const RedisConnectionForm = ({
       if (existingConnections && existingConnections.length > 0) {
         // Preserve existing server name if no new name is provided
         const existingServerName = existingConnections[0].server_name;
-        const finalServerName = serverName.trim() || existingServerName || null;
+        const finalServerName = sanitizedServerName || existingServerName || null;
         
         // Update existing connection's last connected time and server name
         const { data: updatedData, error: updateError } = await supabase
@@ -91,8 +98,8 @@ const RedisConnectionForm = ({
         const { data: newData, error: insertError } = await supabase
           .from('redis_connections')
           .insert({
-            connection_string: input,
-            server_name: serverName.trim() || null,
+            connection_string: sanitizedInput,
+            server_name: sanitizedServerName || null,
             is_active: true,
             user_id: user?.id
           })
@@ -111,8 +118,8 @@ const RedisConnectionForm = ({
 
       const connection: RedisConnection = {
         id: connectionData.id,
-        connectionString: input,
-        serverName: connectionData.server_name || serverName.trim() || undefined,
+        connectionString: sanitizedInput,
+        serverName: connectionData.server_name || sanitizedServerName || undefined,
         isConnected: true,
         lastConnected: new Date()
       };

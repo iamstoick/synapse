@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Github, Mail, Facebook } from 'lucide-react';
+import { signInSchema, signUpSchema } from '@/lib/validation';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -31,9 +32,23 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      // Validate inputs
+      const validation = signInSchema.safeParse({ email, password });
+      
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        toast({
+          title: "Validation error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: validation.data.email,
+        password: validation.data.password,
       });
 
       if (error) throw error;
@@ -43,9 +58,14 @@ const Auth = () => {
         description: "You've been signed in successfully.",
       });
     } catch (error: any) {
+      // Sanitize error messages to avoid leaking sensitive info
+      const errorMessage = error.message?.includes('Invalid login credentials')
+        ? 'Invalid email or password'
+        : 'An error occurred during sign in';
+      
       toast({
         title: "Sign in failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -55,24 +75,32 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: "Password mismatch",
-        description: "Passwords do not match. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
+      // Validate inputs
+      const validation = signUpSchema.safeParse({ 
+        email, 
+        password, 
+        confirmPassword 
+      });
+      
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        toast({
+          title: "Validation error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validation.data.email,
+        password: validation.data.password,
         options: {
           emailRedirectTo: redirectUrl
         }
@@ -85,9 +113,14 @@ const Auth = () => {
         description: "Please check your email to verify your account.",
       });
     } catch (error: any) {
+      // Sanitize error messages
+      const errorMessage = error.message?.includes('already registered')
+        ? 'This email is already registered'
+        : 'An error occurred during sign up';
+      
       toast({
         title: "Sign up failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
